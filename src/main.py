@@ -31,7 +31,7 @@ def load_companies(csv_file):
         return []
     return companies
 
-def generate_factsheet_for_company(url, output_dir=".", provider="gemini", model=None):
+def generate_factsheet_for_company(url, output_dir="factsheets", provider="gemini", model=None):
     """Generate factsheet for a single company"""
     logger.info(f"Starting factsheet generation for: {url}")
     
@@ -54,6 +54,9 @@ def generate_factsheet_for_company(url, output_dir=".", provider="gemini", model
     # Step 3: Save factsheet
     company_name = company_data['homepage'].get('title', url.split('//')[-1].split('/')[0])
     filename = f"{company_name.lower().replace(' ', '-').replace(':', '').replace('?', '').replace('!', '').replace('(', '').replace(')', '')}.md"
+    
+    # Ensure output directory exists
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
     
     output_path = Path(output_dir) / filename
     try:
@@ -84,7 +87,7 @@ Examples:
                            help='CSV file containing company URLs')
     
     parser.add_argument('--select', type=int, help='Select specific company index from CSV (0-based)')
-    parser.add_argument('--output-dir', type=str, default='.', 
+    parser.add_argument('--output-dir', type=str, default='factsheets', 
                        help='Output directory for factsheet files')
     parser.add_argument('--provider', type=str, default='gemini', 
                        choices=['openai', 'gemini'],

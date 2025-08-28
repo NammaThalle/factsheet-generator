@@ -22,7 +22,7 @@ class FactsheetSynthesizer:
                 
         elif self.provider == "gemini":
             genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-            self.model = model or "gemini-pro"
+            self.model = model or "gemini-2.0-flash-exp"
             if not os.getenv("GEMINI_API_KEY"):
                 raise ValueError("GEMINI_API_KEY environment variable not set")
         else:

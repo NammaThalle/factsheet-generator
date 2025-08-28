@@ -48,5 +48,5 @@ ENV/
 *.temp
 .temp_context.md
 
-# Generated factsheets (optional)
-# factsheets/
+# Generated factsheets 
+factsheets/
