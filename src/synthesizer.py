@@ -1,14 +1,11 @@
 import os
-import logging
 from openai import OpenAI
 import google.generativeai as genai
 from dotenv import load_dotenv
+from logger import logger
 
 # Load environment variables
 load_dotenv()
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 class FactsheetSynthesizer:
     def __init__(self, provider="gemini", model=None):

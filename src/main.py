@@ -6,14 +6,11 @@ import argparse
 import csv
 import sys
 import os
-import logging
 from pathlib import Path
 
 from scraper import scrape_company_data
 from synthesizer import create_factsheet
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+from logger import logger
 
 def load_companies(csv_file):
     """Load company data from CSV file"""
@@ -36,7 +33,7 @@ def generate_factsheet_for_company(url, output_dir="factsheets", provider="gemin
     logger.info(f"Starting factsheet generation for: {url}")
     
     # Step 1: Scrape company data
-    logger.info("Step 1: Scraping company website...")
+    logger.step(1, "Scraping company website...")
     company_data = scrape_company_data(url)
     
     if not company_data['success']:
@@ -44,7 +41,7 @@ def generate_factsheet_for_company(url, output_dir="factsheets", provider="gemin
         return False
     
     # Step 2: Generate factsheet
-    logger.info(f"Step 2: Generating factsheet with {provider.upper()}...")
+    logger.step(2, f"Generating factsheet with {provider.upper()}...")
     factsheet_content = create_factsheet(company_data, provider=provider, model=model)
     
     if not factsheet_content:
@@ -62,7 +59,7 @@ def generate_factsheet_for_company(url, output_dir="factsheets", provider="gemin
     try:
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(factsheet_content)
-        logger.info(f"Factsheet saved to: {output_path}")
+        logger.success(f"Factsheet saved to: {output_path}")
         return True
     except Exception as e:
         logger.error(f"Error saving factsheet: {str(e)}")
@@ -98,7 +95,7 @@ Examples:
     args = parser.parse_args()
     
     if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
+        logger.set_verbose(True)
     
     # Validate API key based on provider
     if args.provider == "openai":
