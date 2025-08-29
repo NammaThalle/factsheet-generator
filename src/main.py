@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
+"""
+Company Factsheet Generator - CLI Interface
 
-"""Company Factsheet Generator - Main CLI Interface"""
+Generates AI-powered business intelligence factsheets from company websites
+for sales teams preparing for discovery calls.
+"""
 
 import argparse
 import csv
@@ -16,15 +20,10 @@ def sanitize_filename(title: str, fallback_url: str = "") -> str:
     """Create a safe filename from company domain"""
     from urllib.parse import urlparse
     
-    # Always use the domain name, ignore the title
     if fallback_url:
         domain = urlparse(fallback_url).netloc
-        # Remove www. and common prefixes
         domain = domain.replace('www.', '').replace('app.', '').replace('api.', '')
-        # Take the main domain name (before first dot)
-        company_name = domain.split('.')[0]
-        # Clean it
-        company_name = company_name.lower().replace('-', '').replace('_', '')
+        company_name = domain.split('.')[0].lower().replace('-', '').replace('_', '')
         return f"{company_name}.md"
     else:
         return "factsheet.md"

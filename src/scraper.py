@@ -1,3 +1,10 @@
+"""
+Web Scraping Module
+
+Extracts content from company websites including homepage and about pages
+for factsheet generation.
+"""
+
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin

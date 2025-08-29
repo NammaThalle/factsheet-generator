@@ -1,10 +1,16 @@
+"""
+AI Synthesis Module
+
+Generates business intelligence factsheets using OpenAI GPT or Google Gemini models.
+Supports multiple providers and models with consistent output formatting.
+"""
+
 import os
 from openai import OpenAI
 import google.generativeai as genai
 from dotenv import load_dotenv
 from logger import logger
 
-# Load environment variables
 load_dotenv()
 
 class FactsheetSynthesizer:

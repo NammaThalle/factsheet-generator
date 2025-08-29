@@ -1,14 +1,17 @@
-"""Streamlit frontend for the Factsheet Generator"""
+"""
+Streamlit Web Frontend
+
+Interactive web interface for the Company Factsheet Generator.
+Features dashboard, generator, and viewer pages with real-time analytics.
+"""
 
 import streamlit as st
 import pandas as pd
 from datetime import datetime
 import plotly.express as px
-import plotly.graph_objects as go
 import sys
 import os
 
-# Add shared utilities to path
 sys.path.append(os.path.join(os.path.dirname(__file__), "../shared"))
 from utils import APIClient, wait_for_task_completion, format_file_size, validate_url, normalize_url, get_company_name_from_url
 

@@ -4,7 +4,6 @@
 import os
 import subprocess
 import sys
-import signal
 
 # Path to the Streamlit app
 frontend_app = os.path.join(os.path.dirname(__file__), "../web/frontend/app.py")
