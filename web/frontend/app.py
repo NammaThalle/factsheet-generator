@@ -1,16 +1,19 @@
-"""Streamlit frontend for the Factsheet Generator"""
+"""
+Streamlit Web Frontend
+
+Interactive web interface for the Company Factsheet Generator.
+Features dashboard, generator, and viewer pages with real-time analytics.
+"""
 
 import streamlit as st
 import pandas as pd
 from datetime import datetime
 import plotly.express as px
-import plotly.graph_objects as go
 import sys
 import os
 
-# Add shared utilities to path
 sys.path.append(os.path.join(os.path.dirname(__file__), "../shared"))
-from utils import APIClient, wait_for_task_completion, format_file_size, validate_url, get_company_name_from_url
+from utils import APIClient, wait_for_task_completion, format_file_size, validate_url, normalize_url, get_company_name_from_url
 
 # Page config
 st.set_page_config(
@@ -126,7 +129,7 @@ def show_dashboard():
                 word_counts = [f['word_count'] for f in factsheets]
                 fig = px.histogram(
                     x=word_counts,
-                    bins=10,
+                    nbins=10,
                     title="Word Count Distribution",
                     labels={'x': 'Word Count', 'y': 'Number of Factsheets'}
                 )
@@ -201,8 +204,8 @@ def show_generator():
         with col1:
             url = st.text_input(
                 "Company Website URL",
-                placeholder="https://example.com",
-                help="Enter the full URL including http:// or https://"
+                placeholder="example.com or stripe.com",
+                help="Enter company domain (https:// and www. will be added automatically)"
             )
         
         with col2:
@@ -228,15 +231,18 @@ def show_generator():
                 st.error("Please enter a company URL")
                 return
             
+            # Normalize the URL
+            normalized_url = normalize_url(url)
+            
             if not validate_url(url):
-                st.error("Please enter a valid URL (must start with http:// or https://)")
+                st.error("Please enter a valid company domain")
                 return
             
             try:
-                # Start generation
+                # Start generation with normalized URL
                 with st.spinner("Starting factsheet generation..."):
                     response = api_client.generate_factsheet(
-                        url=url,
+                        url=normalized_url,
                         provider=provider,
                         model=model if model else None
                     )
@@ -255,6 +261,10 @@ def show_generator():
                     
                     st.success("Factsheet generated successfully!")
                     
+                    # Store completion info in session state
+                    st.session_state.generation_completed = True
+                    st.session_state.completed_filename = result['result']['filename']
+                    
                     # Show result details
                     st.subheader("Generation Complete")
                     
@@ -268,18 +278,21 @@ def show_generator():
                     
                     with col3:
                         st.metric("Status", "Complete")
-                    
-                    # Option to view the factsheet
-                    if st.button("View Generated Factsheet"):
-                        st.session_state.selected_factsheet = result['result']['filename']
-                        st.session_state.page = "viewer"
-                        st.rerun()
                 
                 except Exception as e:
                     st.error(f"Generation failed: {e}")
             
             except Exception as e:
                 st.error(f"Error starting generation: {e}")
+    
+    # Check if we just completed generation and show view button outside form
+    if 'generation_completed' in st.session_state and st.session_state.generation_completed:
+        st.subheader("Next Steps")
+        if st.button("View Generated Factsheet", type="secondary"):
+            st.session_state.selected_factsheet = st.session_state.completed_filename
+            st.session_state.page = "viewer"
+            st.session_state.generation_completed = False  # Reset flag
+            st.rerun()
 
 def show_viewer():
     """Show factsheet viewer"""
@@ -325,7 +338,15 @@ def show_viewer():
         st.divider()
         
         # Display factsheet content
-        st.markdown(content)
+        # Remove markdown code fence if present
+        display_content = content
+        if display_content.startswith('```markdown\n'):
+            display_content = display_content[12:]  # Remove ```markdown\n
+        if display_content.endswith('\n```'):
+            display_content = display_content[:-4]  # Remove \n```
+            
+        with st.container():
+            st.markdown(display_content)
         
     except Exception as e:
         st.error(f"Error loading factsheet: {e}")

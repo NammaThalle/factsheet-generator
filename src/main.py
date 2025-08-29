@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
+"""
+Company Factsheet Generator - CLI Interface
 
-"""Company Factsheet Generator - Main CLI Interface"""
+Generates AI-powered business intelligence factsheets from company websites
+for sales teams preparing for discovery calls.
+"""
 
 import argparse
 import csv
@@ -11,6 +15,18 @@ from pathlib import Path
 from scraper import scrape_company_data
 from synthesizer import create_factsheet
 from logger import logger
+
+def sanitize_filename(title: str, fallback_url: str = "") -> str:
+    """Create a safe filename from company domain"""
+    from urllib.parse import urlparse
+    
+    if fallback_url:
+        domain = urlparse(fallback_url).netloc
+        domain = domain.replace('www.', '').replace('app.', '').replace('api.', '')
+        company_name = domain.split('.')[0].lower().replace('-', '').replace('_', '')
+        return f"{company_name}.md"
+    else:
+        return "factsheet.md"
 
 def load_companies(csv_file):
     """Load company data from CSV file"""
@@ -49,8 +65,8 @@ def generate_factsheet_for_company(url, output_dir="factsheets", provider="gemin
         return False
     
     # Step 3: Save factsheet
-    company_name = company_data['homepage'].get('title', url.split('//')[-1].split('/')[0])
-    filename = f"{company_name.lower().replace(' ', '-').replace(':', '').replace('?', '').replace('!', '').replace('(', '').replace(')', '')}.md"
+    page_title = company_data['homepage'].get('title', '')
+    filename = sanitize_filename(page_title, url)
     
     # Ensure output directory exists
     Path(output_dir).mkdir(parents=True, exist_ok=True)

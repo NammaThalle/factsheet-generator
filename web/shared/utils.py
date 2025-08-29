@@ -94,9 +94,31 @@ def format_file_size(size_bytes: int) -> str:
     s = round(size_bytes / p, 2)
     return f"{s} {size_names[i]}"
 
+def normalize_url(url: str) -> str:
+    """Normalize URL by adding https:// and handling www"""
+    url = url.strip()
+    
+    # Add https:// if no protocol specified
+    if not url.startswith(('http://', 'https://')):
+        url = 'https://' + url
+    
+    # Add www. if domain doesn't have a subdomain (basic heuristic)
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    domain_parts = parsed.netloc.split('.')
+    
+    # If domain has only 2 parts (like example.com), add www
+    if len(domain_parts) == 2 and not parsed.netloc.startswith('www.'):
+        url = url.replace(parsed.netloc, f'www.{parsed.netloc}', 1)
+    
+    return url
+
 def validate_url(url: str) -> bool:
     """Validate if URL is properly formatted"""
     import re
+    # Normalize first, then validate
+    normalized_url = normalize_url(url)
+    
     url_pattern = re.compile(
         r'^https?://'  # http:// or https://
         r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain...
@@ -104,7 +126,7 @@ def validate_url(url: str) -> bool:
         r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
         r'(?::\d+)?'  # optional port
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-    return url_pattern.match(url) is not None
+    return url_pattern.match(normalized_url) is not None
 
 def get_company_name_from_url(url: str) -> str:
     """Extract company name from URL"""
@@ -115,6 +137,23 @@ def get_company_name_from_url(url: str) -> str:
         domain = domain.replace('www.', '').replace('app.', '').replace('api.', '')
         # Take the main domain name
         name = domain.split('.')[0]
-        return name.replace('-', ' ').replace('_', ' ').title()
+        return name.capitalize()
     except:
-        return "Unknown Company"
+        return "Company"
+
+def sanitize_filename(title: str, fallback_url: str = "") -> str:
+    """Create a safe filename from company domain"""
+    from urllib.parse import urlparse
+    
+    # Always use the domain name, ignore the title
+    if fallback_url:
+        domain = urlparse(fallback_url).netloc
+        # Remove www. and common prefixes
+        domain = domain.replace('www.', '').replace('app.', '').replace('api.', '')
+        # Take the main domain name (before first dot)
+        company_name = domain.split('.')[0]
+        # Clean it
+        company_name = company_name.lower().replace('-', '').replace('_', '')
+        return f"{company_name}.md"
+    else:
+        return "factsheet.md"

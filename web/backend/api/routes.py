@@ -20,9 +20,11 @@ from .models import (
 # Import existing components
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../../src"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../shared"))
 from src.scraper import scrape_company_data
 from src.synthesizer import create_factsheet
 from src.logger import logger
+from web.shared.utils import sanitize_filename
 
 router = APIRouter(prefix="/api", tags=["factsheets"])
 
@@ -36,27 +38,27 @@ def get_factsheets_dir() -> Path:
 def get_factsheet_metadata(filepath: Path) -> FactsheetMetadata:
     """Extract metadata from factsheet file"""
     try:
-        # Read first few lines to extract metadata
+        # Read content
         with open(filepath, 'r', encoding='utf-8') as f:
             content = f.read()
             lines = content.split('\n')
         
-        # Extract company name from title (first line usually starts with #)
-        company_name = "Unknown Company"
-        url = "Unknown URL"
-        
-        for line in lines[:10]:  # Check first 10 lines
-            if line.startswith('# ') and 'factsheet' not in line.lower():
-                company_name = line.replace('# ', '').split(':')[0].strip()
-                break
+        # Extract company name from filename as primary source
+        filename_stem = filepath.stem  # e.g., "stripe" from "stripe.md"
+        company_name = filename_stem.capitalize()  # e.g., "Stripe"
         
         # Try to extract URL from content
+        url = "Unknown URL"
         for line in lines[:20]:
-            if 'http' in line and ('company' in line.lower() or 'website' in line.lower()):
+            if 'http' in line and ('website' in line.lower() or 'company' in line.lower()):
                 import re
-                url_match = re.search(r'https?://[^\s\)]+', line)
+                # Try to match markdown link format [text](url) or just url
+                url_match = re.search(r'\[(https?://[^\]]+)\]|\*\*Website:\*\*\s*\[(https?://[^\]]+)\]|https?://[^\s\)\]]+', line)
                 if url_match:
-                    url = url_match.group()
+                    # Get the first non-None group
+                    url = next(group for group in url_match.groups() if group) if url_match.groups() and any(url_match.groups()) else url_match.group()
+                    # Clean up markdown formatting
+                    url = url.rstrip('/')
                     break
         
         stats = filepath.stat()
@@ -115,8 +117,14 @@ async def generate_factsheet_task(task_id: str, url: str, provider: str, model: 
         factsheets_dir = get_factsheets_dir()
         factsheets_dir.mkdir(exist_ok=True)
         
-        company_name = company_data['homepage'].get('title', url.split('//')[-1].split('/')[0])
-        filename = f"{company_name.lower().replace(' ', '-').replace(':', '').replace('?', '').replace('!', '').replace('(', '').replace(')', '')}.md"
+        page_title = company_data['homepage'].get('title', '')
+        filename = sanitize_filename(page_title, url)
+        
+        # Extract clean company name from domain
+        from urllib.parse import urlparse
+        domain = urlparse(url).netloc
+        domain = domain.replace('www.', '').replace('app.', '').replace('api.', '')
+        company_name = domain.split('.')[0].capitalize()
         
         output_path = factsheets_dir / filename
         

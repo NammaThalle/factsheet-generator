@@ -1,4 +1,9 @@
-"""FastAPI backend for the factsheet generator web interface"""
+"""
+FastAPI Backend Application
+
+REST API backend for the factsheet generator web interface.
+Provides endpoints for factsheet generation, management, and file operations.
+"""
 
 import os
 import sys
@@ -8,7 +13,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-# Add src to Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../src"))
 
 from .api.routes import router
