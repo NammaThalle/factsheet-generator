@@ -11,9 +11,24 @@ if [[ "$VIRTUAL_ENV" == "" ]]; then
     exit 1
 fi
 
-# Install web dependencies if not already installed
-echo "Installing web dependencies..."
-pip install -r requirements-web.txt -q
+# Install dependencies if not already installed
+echo "Installing dependencies..."
+pip install -r requirements.txt -q
+
+# Trap function to handle cleanup
+cleanup() {
+    echo ""
+    echo "Stopping services..."
+    if [[ -n "$BACKEND_PID" ]]; then
+        kill $BACKEND_PID 2>/dev/null
+        wait $BACKEND_PID 2>/dev/null
+    fi
+    echo "Services stopped"
+    exit 0
+}
+
+# Set trap for SIGINT (Ctrl+C)
+trap cleanup SIGINT
 
 # Start backend in background
 echo "Starting API backend (port 8000)..."
@@ -30,7 +45,5 @@ echo ""
 echo "Press Ctrl+C to stop both services"
 python scripts/start-frontend.py
 
-# Clean up background process when frontend stops
-echo "Stopping services..."
-kill $BACKEND_PID 2>/dev/null
-echo "Services stopped"
+# If we get here, frontend exited normally
+cleanup

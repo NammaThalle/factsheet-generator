@@ -4,6 +4,7 @@
 import os
 import subprocess
 import sys
+import signal
 
 # Path to the Streamlit app
 frontend_app = os.path.join(os.path.dirname(__file__), "../web/frontend/app.py")
@@ -14,10 +15,14 @@ if __name__ == "__main__":
     print("Make sure the backend API is running on port 8000")
     print("---")
     
-    # Start Streamlit
-    subprocess.run([
-        sys.executable, "-m", "streamlit", "run", frontend_app,
-        "--server.port", "8501",
-        "--server.address", "0.0.0.0",
-        "--browser.gatherUsageStats", "false"
-    ])
+    try:
+        # Start Streamlit
+        subprocess.run([
+            sys.executable, "-m", "streamlit", "run", frontend_app,
+            "--server.port", "8501",
+            "--server.address", "0.0.0.0",
+            "--browser.gatherUsageStats", "false"
+        ])
+    except KeyboardInterrupt:
+        print("\nShutting down frontend...")
+        sys.exit(0)
