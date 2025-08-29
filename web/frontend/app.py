@@ -10,7 +10,7 @@ import os
 
 # Add shared utilities to path
 sys.path.append(os.path.join(os.path.dirname(__file__), "../shared"))
-from utils import APIClient, wait_for_task_completion, format_file_size, validate_url, get_company_name_from_url
+from utils import APIClient, wait_for_task_completion, format_file_size, validate_url, normalize_url, get_company_name_from_url
 
 # Page config
 st.set_page_config(
@@ -201,8 +201,8 @@ def show_generator():
         with col1:
             url = st.text_input(
                 "Company Website URL",
-                placeholder="https://example.com",
-                help="Enter the full URL including http:// or https://"
+                placeholder="example.com or stripe.com",
+                help="Enter company domain (https:// and www. will be added automatically)"
             )
         
         with col2:
@@ -228,15 +228,18 @@ def show_generator():
                 st.error("Please enter a company URL")
                 return
             
+            # Normalize the URL
+            normalized_url = normalize_url(url)
+            
             if not validate_url(url):
-                st.error("Please enter a valid URL (must start with http:// or https://)")
+                st.error("Please enter a valid company domain")
                 return
             
             try:
-                # Start generation
+                # Start generation with normalized URL
                 with st.spinner("Starting factsheet generation..."):
                     response = api_client.generate_factsheet(
-                        url=url,
+                        url=normalized_url,
                         provider=provider,
                         model=model if model else None
                     )
