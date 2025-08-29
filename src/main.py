@@ -12,6 +12,23 @@ from scraper import scrape_company_data
 from synthesizer import create_factsheet
 from logger import logger
 
+def sanitize_filename(title: str, fallback_url: str = "") -> str:
+    """Create a safe filename from company domain"""
+    from urllib.parse import urlparse
+    
+    # Always use the domain name, ignore the title
+    if fallback_url:
+        domain = urlparse(fallback_url).netloc
+        # Remove www. and common prefixes
+        domain = domain.replace('www.', '').replace('app.', '').replace('api.', '')
+        # Take the main domain name (before first dot)
+        company_name = domain.split('.')[0]
+        # Clean it
+        company_name = company_name.lower().replace('-', '').replace('_', '')
+        return f"{company_name}.md"
+    else:
+        return "factsheet.md"
+
 def load_companies(csv_file):
     """Load company data from CSV file"""
     companies = []
@@ -49,8 +66,8 @@ def generate_factsheet_for_company(url, output_dir="factsheets", provider="gemin
         return False
     
     # Step 3: Save factsheet
-    company_name = company_data['homepage'].get('title', url.split('//')[-1].split('/')[0])
-    filename = f"{company_name.lower().replace(' ', '-').replace(':', '').replace('?', '').replace('!', '').replace('(', '').replace(')', '')}.md"
+    page_title = company_data['homepage'].get('title', '')
+    filename = sanitize_filename(page_title, url)
     
     # Ensure output directory exists
     Path(output_dir).mkdir(parents=True, exist_ok=True)

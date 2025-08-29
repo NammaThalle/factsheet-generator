@@ -20,9 +20,11 @@ from .models import (
 # Import existing components
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../../src"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../shared"))
 from src.scraper import scrape_company_data
 from src.synthesizer import create_factsheet
 from src.logger import logger
+from web.shared.utils import sanitize_filename
 
 router = APIRouter(prefix="/api", tags=["factsheets"])
 
@@ -115,8 +117,9 @@ async def generate_factsheet_task(task_id: str, url: str, provider: str, model: 
         factsheets_dir = get_factsheets_dir()
         factsheets_dir.mkdir(exist_ok=True)
         
-        company_name = company_data['homepage'].get('title', url.split('//')[-1].split('/')[0])
-        filename = f"{company_name.lower().replace(' ', '-').replace(':', '').replace('?', '').replace('!', '').replace('(', '').replace(')', '')}.md"
+        page_title = company_data['homepage'].get('title', '')
+        filename = sanitize_filename(page_title, url)
+        company_name = page_title or url.split('//')[-1].split('/')[0]
         
         output_path = factsheets_dir / filename
         

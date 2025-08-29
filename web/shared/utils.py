@@ -140,3 +140,20 @@ def get_company_name_from_url(url: str) -> str:
         return name.replace('-', ' ').replace('_', ' ').title()
     except:
         return "Unknown Company"
+
+def sanitize_filename(title: str, fallback_url: str = "") -> str:
+    """Create a safe filename from company domain"""
+    from urllib.parse import urlparse
+    
+    # Always use the domain name, ignore the title
+    if fallback_url:
+        domain = urlparse(fallback_url).netloc
+        # Remove www. and common prefixes
+        domain = domain.replace('www.', '').replace('app.', '').replace('api.', '')
+        # Take the main domain name (before first dot)
+        company_name = domain.split('.')[0]
+        # Clean it
+        company_name = company_name.lower().replace('-', '').replace('_', '')
+        return f"{company_name}.md"
+    else:
+        return "factsheet.md"
