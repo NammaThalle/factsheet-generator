@@ -4,8 +4,10 @@ An AI-powered Python tool that generates business intelligence factsheets from c
 
 ## Features
 
+- **Web Interface**: Modern Streamlit dashboard with real-time generation
+- **REST API**: FastAPI backend with async processing  
 - **Web Scraping**: Extracts content from company homepages and About pages
-- **AI-Powered Analysis**: Uses OpenAI GPT to generate structured factsheets
+- **AI-Powered Analysis**: Uses Gemini 2.0 Flash & OpenAI GPT models
 - **Sales-Focused**: Creates actionable intelligence for discovery calls
 - **CLI Interface**: Easy-to-use command line tool
 - **Batch Processing**: Process multiple companies from CSV
@@ -25,12 +27,24 @@ An AI-powered Python tool that generates business intelligence factsheets from c
 
 ## Usage
 
-### Single Company
+### Web Interface (Recommended)
+```bash
+# Install web dependencies
+pip install -r requirements-web.txt
+
+# Start web interface
+./start-web.sh
+```
+Then open http://localhost:8501 in your browser.
+
+### Command Line Interface
+
+#### Single Company
 ```bash
 python src/main.py --url https://company.com/
 ```
 
-### Multiple Companies from CSV
+#### Multiple Companies from CSV
 ```bash
 # List available companies
 python src/main.py --csv companies.csv
@@ -39,7 +53,8 @@ python src/main.py --csv companies.csv
 python src/main.py --csv companies.csv --select 0
 ```
 
-### Options
+#### Options
+- `--provider`: AI provider (gemini, openai)
 - `--output-dir`: Specify output directory for factsheet files
 - `--verbose`: Enable detailed logging
 
@@ -59,5 +74,10 @@ The included `companies.csv` contains 6 sample companies across different indust
 ## Requirements
 
 - Python 3.8+
-- OpenAI API key
+- Gemini API key (recommended, free tier available) or OpenAI API key
 - Internet connection for web scraping
+
+## Documentation
+
+- **Web Interface Guide**: See [README-WEB.md](README-WEB.md) for detailed web interface documentation
+- **API Documentation**: Available at http://localhost:8000/docs when backend is running
