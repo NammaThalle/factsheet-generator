@@ -137,9 +137,9 @@ def get_company_name_from_url(url: str) -> str:
         domain = domain.replace('www.', '').replace('app.', '').replace('api.', '')
         # Take the main domain name
         name = domain.split('.')[0]
-        return name.replace('-', ' ').replace('_', ' ').title()
+        return name.capitalize()
     except:
-        return "Unknown Company"
+        return "Company"
 
 def sanitize_filename(title: str, fallback_url: str = "") -> str:
     """Create a safe filename from company domain"""

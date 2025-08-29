@@ -119,7 +119,12 @@ async def generate_factsheet_task(task_id: str, url: str, provider: str, model: 
         
         page_title = company_data['homepage'].get('title', '')
         filename = sanitize_filename(page_title, url)
-        company_name = page_title or url.split('//')[-1].split('/')[0]
+        
+        # Extract clean company name from domain
+        from urllib.parse import urlparse
+        domain = urlparse(url).netloc
+        domain = domain.replace('www.', '').replace('app.', '').replace('api.', '')
+        company_name = domain.split('.')[0].capitalize()
         
         output_path = factsheets_dir / filename
         
