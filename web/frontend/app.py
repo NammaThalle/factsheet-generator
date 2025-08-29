@@ -126,7 +126,7 @@ def show_dashboard():
                 word_counts = [f['word_count'] for f in factsheets]
                 fig = px.histogram(
                     x=word_counts,
-                    bins=10,
+                    nbins=10,
                     title="Word Count Distribution",
                     labels={'x': 'Word Count', 'y': 'Number of Factsheets'}
                 )
@@ -255,6 +255,10 @@ def show_generator():
                     
                     st.success("Factsheet generated successfully!")
                     
+                    # Store completion info in session state
+                    st.session_state.generation_completed = True
+                    st.session_state.completed_filename = result['result']['filename']
+                    
                     # Show result details
                     st.subheader("Generation Complete")
                     
@@ -268,18 +272,21 @@ def show_generator():
                     
                     with col3:
                         st.metric("Status", "Complete")
-                    
-                    # Option to view the factsheet
-                    if st.button("View Generated Factsheet"):
-                        st.session_state.selected_factsheet = result['result']['filename']
-                        st.session_state.page = "viewer"
-                        st.rerun()
                 
                 except Exception as e:
                     st.error(f"Generation failed: {e}")
             
             except Exception as e:
                 st.error(f"Error starting generation: {e}")
+    
+    # Check if we just completed generation and show view button outside form
+    if 'generation_completed' in st.session_state and st.session_state.generation_completed:
+        st.subheader("Next Steps")
+        if st.button("View Generated Factsheet", type="secondary"):
+            st.session_state.selected_factsheet = st.session_state.completed_filename
+            st.session_state.page = "viewer"
+            st.session_state.generation_completed = False  # Reset flag
+            st.rerun()
 
 def show_viewer():
     """Show factsheet viewer"""
@@ -325,7 +332,15 @@ def show_viewer():
         st.divider()
         
         # Display factsheet content
-        st.markdown(content)
+        # Remove markdown code fence if present
+        display_content = content
+        if display_content.startswith('```markdown\n'):
+            display_content = display_content[12:]  # Remove ```markdown\n
+        if display_content.endswith('\n```'):
+            display_content = display_content[:-4]  # Remove \n```
+            
+        with st.container():
+            st.markdown(display_content)
         
     except Exception as e:
         st.error(f"Error loading factsheet: {e}")
