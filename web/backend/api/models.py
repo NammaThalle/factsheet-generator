@@ -9,6 +9,7 @@ class GenerateRequest(BaseModel):
     url: HttpUrl = Field(..., description="Company website URL to analyze")
     provider: str = Field(default="gemini", description="AI provider to use")
     model: Optional[str] = Field(None, description="Specific model to use")
+    deep_intel: bool = Field(default=False, description="Enable deep web intelligence gathering")
 
 class GenerateResponse(BaseModel):
     """Response model for factsheet generation"""
@@ -33,6 +34,7 @@ class FactsheetMetadata(BaseModel):
     created_at: datetime
     file_size: int
     provider: str
+    deep_intel: bool = Field(default=False, description="Whether deep intelligence was used")
 
 class FactsheetListResponse(BaseModel):
     """Response for listing factsheets"""
@@ -49,6 +51,7 @@ class BulkGenerateRequest(BaseModel):
     urls: List[HttpUrl] = Field(..., description="List of company URLs")
     provider: str = Field(default="gemini", description="AI provider to use")
     model: Optional[str] = Field(None, description="Specific model to use")
+    deep_intel: bool = Field(default=False, description="Enable deep web intelligence gathering")
 
 class ErrorResponse(BaseModel):
     """Standard error response"""

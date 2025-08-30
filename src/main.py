@@ -44,7 +44,7 @@ def load_companies(csv_file):
         return []
     return companies
 
-def generate_factsheet_for_company(url, output_dir="factsheets", provider="gemini", model=None):
+def generate_factsheet_for_company(url, output_dir="factsheets", provider="gemini", model=None, deep_intel=False):
     """Generate factsheet for a single company"""
     logger.info(f"Starting factsheet generation for: {url}")
     
@@ -63,6 +63,17 @@ def generate_factsheet_for_company(url, output_dir="factsheets", provider="gemin
     if not factsheet_content:
         logger.error("Failed to generate factsheet")
         return False
+    
+    # Step 2.5: Enhance with deep web intelligence if requested
+    if deep_intel:
+        logger.step("2.5", "Enhancing with deep web intelligence...")
+        try:
+            from intelligence import enhance_factsheet_with_intelligence
+            factsheet_content = enhance_factsheet_with_intelligence(company_data, factsheet_content)
+            logger.success("Intelligence enhancement completed")
+        except Exception as e:
+            logger.warning(f"Intelligence enhancement failed: {e}")
+            logger.info("Continuing with basic factsheet")
     
     # Step 3: Save factsheet
     page_title = company_data['homepage'].get('title', '')
@@ -86,11 +97,11 @@ def main():
         description="Generate company factsheets from web data using AI",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Examples:
-  python src/main.py --url https://company.com/
-  python src/main.py --csv companies.csv --select 0
-  python src/main.py --url https://company.com/ --provider openai
-        """
+            Examples:
+            python src/main.py --url https://company.com/
+            python src/main.py --csv companies.csv --select 0
+            python src/main.py --url https://company.com/ --provider openai
+                    """
     )
     
     # Input options
@@ -106,6 +117,8 @@ Examples:
                        choices=['openai', 'gemini'],
                        help='AI provider to use (default: gemini - free tier available)')
     parser.add_argument('--model', type=str, help='AI model to use (provider-specific)')
+    parser.add_argument('--deep-intel', action='store_true', 
+                       help='Enable deep web intelligence gathering (LinkedIn, news, funding data)')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
     
     args = parser.parse_args()
@@ -129,7 +142,10 @@ Examples:
     
     # Process single URL
     if args.url:
-        success = generate_factsheet_for_company(args.url, args.output_dir, args.provider, args.model)
+        success = generate_factsheet_for_company(
+            args.url, args.output_dir, args.provider, args.model, 
+            deep_intel=getattr(args, 'deep_intel', False)
+        )
         return 0 if success else 1
     
     # Process from CSV
@@ -146,7 +162,9 @@ Examples:
                 company = companies[args.select]
                 logger.info(f"Processing selected company {args.select}: {company['url']}")
                 success = generate_factsheet_for_company(
-                    company['url'], args.output_dir, args.provider, args.model)
+                    company['url'], args.output_dir, args.provider, args.model, 
+                    deep_intel=getattr(args, 'deep_intel', False)
+                )
                 return 0 if success else 1
             else:
                 logger.error(f"Invalid selection {args.select}. Available indices: 0-{len(companies)-1}")

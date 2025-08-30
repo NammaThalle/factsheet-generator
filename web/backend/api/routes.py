@@ -84,7 +84,7 @@ def get_factsheet_metadata(filepath: Path) -> FactsheetMetadata:
             provider="unknown"
         )
 
-async def generate_factsheet_task(task_id: str, url: str, provider: str, model: Optional[str]):
+async def generate_factsheet_task(task_id: str, url: str, provider: str, model: Optional[str], deep_intel: bool = False):
     """Background task to generate factsheet"""
     try:
         tasks[task_id].status = "processing"
@@ -109,6 +109,18 @@ async def generate_factsheet_task(task_id: str, url: str, provider: str, model: 
             tasks[task_id].status = "failed"
             tasks[task_id].error = "Failed to generate factsheet content"
             return
+        
+        # Step 2.5: Enhance with deep web intelligence if requested
+        if deep_intel:
+            tasks[task_id].progress = 70
+            tasks[task_id].message = "Enhancing with deep web intelligence..."
+            try:
+                from src.intelligence import enhance_factsheet_with_intelligence
+                factsheet_content = enhance_factsheet_with_intelligence(company_data, factsheet_content)
+                logger.info("Intelligence enhancement completed")
+            except Exception as e:
+                logger.warning(f"Intelligence enhancement failed: {e}")
+                tasks[task_id].message = "Intelligence enhancement failed, continuing with basic factsheet"
         
         tasks[task_id].progress = 80
         tasks[task_id].message = "Saving factsheet..."
@@ -167,7 +179,8 @@ async def generate_factsheet(request: GenerateRequest, background_tasks: Backgro
         task_id,
         str(request.url),
         request.provider,
-        request.model
+        request.model,
+        request.deep_intel
     )
     
     return GenerateResponse(

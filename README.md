@@ -8,6 +8,7 @@ An AI-powered Python tool that generates business intelligence factsheets from c
 - **REST API**: FastAPI backend with async processing and auto-generated documentation  
 - **Web Scraping**: Intelligent content extraction from company homepages and About pages
 - **AI-Powered Analysis**: Multi-provider support (Gemini 2.0 Flash & OpenAI GPT)
+- **Deep Web Intelligence**: Advanced intelligence gathering from LinkedIn, news, funding data, and competitive analysis
 - **Sales-Focused**: Creates actionable intelligence optimized for discovery calls
 - **CLI Interface**: Full-featured command line tool for automation
 - **Batch Processing**: Process multiple companies from CSV files
@@ -57,6 +58,7 @@ python src/main.py --csv companies.csv --select 0
 #### CLI Options
 - `--provider {gemini,openai}`: AI provider (default: gemini)
 - `--model`: Specific model name (optional)
+- `--deep-intel`: Enable deep web intelligence gathering (LinkedIn, news, funding data)
 - `--output-dir`: Output directory (default: factsheets/)
 - `--verbose`: Enable detailed logging
 
@@ -71,6 +73,7 @@ python src/main.py --csv companies.csv --select 0
 ### Generator
 - Simple URL input with validation and auto-completion
 - AI provider selection (Gemini/OpenAI)
+- **Deep Web Intelligence toggle** - Enable advanced intelligence gathering
 - Real-time progress tracking with status updates
 - Immediate results display
 
@@ -97,7 +100,14 @@ python src/main.py --csv companies.csv --select 0
 ```bash
 curl -X POST "http://localhost:8000/api/generate" \
   -H "Content-Type: application/json" \
-  -d '{"url": "https://stripe.com", "provider": "gemini"}'
+  -d '{"url": "https://stripe.com", "provider": "gemini", "deep_intel": false}'
+```
+
+**Generate with deep intelligence:**
+```bash
+curl -X POST "http://localhost:8000/api/generate" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://stripe.com", "provider": "gemini", "deep_intel": true}'
 ```
 
 **Check progress:**
@@ -152,8 +162,44 @@ The tool generates 600-1000 word markdown factsheets containing:
 - **Company Overview**: Mission, value propositions, business model
 - **Products & Services**: Core offerings, target markets, pricing insights
 - **Business Intelligence**: Market positioning, company size indicators
+- **Deep Web Intelligence** (optional): LinkedIn insights, news sentiment, funding data, technology stack analysis
 - **Sales Insights**: Conversation starters, potential pain points, competitive advantages
 - **Key Contacts**: Leadership information and contact details (when available)
+
+## Deep Web Intelligence
+
+When enabled with `--deep-intel` (CLI) or the toggle in the web interface, the system gathers advanced intelligence from multiple sources:
+
+### Intelligence Sources
+- **LinkedIn Company Data**: Employee count estimates, recent activity, key executives
+- **News Sentiment Analysis**: Recent news coverage with positive/negative signal detection
+- **Funding Intelligence**: Investment rounds, valuations, investor information
+- **Technology Stack Analysis**: Web technologies, digital maturity assessment
+- **Social Media Presence**: Platform presence and engagement indicators
+- **Competitive Landscape**: Competitor identification and positioning analysis
+- **Growth Indicators**: Hiring activity, expansion signals, partnership announcements
+
+### Enhanced Factsheet Sections
+When deep intelligence is enabled, factsheets include additional sections:
+- **Business Intelligence**: Company size, growth signals, hiring activity
+- **Recent News & Market Sentiment**: News analysis with sentiment scoring
+- **Technology & Digital Maturity**: Tech stack analysis and sophistication scoring
+- **Growth & Expansion Signals**: Multiple growth indicators and activity metrics
+- **Competitive Landscape**: Identified competitors and market positioning
+- **Contact Intelligence**: Potential contact information and decision makers
+
+### Usage Examples
+
+**CLI with Deep Intelligence:**
+```bash
+python src/main.py --url https://stripe.com --deep-intel
+python src/main.py --csv companies.csv --select 0 --deep-intel --provider openai
+```
+
+**Web Interface:**
+Enable the "Deep Web Intelligence" checkbox in Advanced Options for comprehensive analysis.
+
+**Note**: Deep intelligence gathering takes longer (2-3x) but provides significantly richer business insights.
 
 ## Sample Companies
 

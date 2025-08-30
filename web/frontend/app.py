@@ -18,7 +18,6 @@ from utils import APIClient, wait_for_task_completion, format_file_size, validat
 # Page config
 st.set_page_config(
     page_title="Factsheet Generator",
-    page_icon=":chart_with_upwards_trend:",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -218,11 +217,25 @@ def show_generator():
         
         # Advanced options
         with st.expander("Advanced Options"):
-            model = st.text_input(
-                "Custom Model",
-                placeholder="Leave empty for default",
-                help="Specify a custom model name (optional)"
-            )
+            col_model, col_intel = st.columns(2)
+            
+            with col_model:
+                model = st.text_input(
+                    "Custom Model",
+                    placeholder="Leave empty for default",
+                    help="Specify a custom model name (optional)"
+                )
+            
+            with col_intel:
+                st.markdown("**Intelligence Level**")
+                deep_intel = st.checkbox(
+                    "Deep Web Intelligence",
+                    value=False,
+                    help="Enable advanced intelligence gathering from LinkedIn, news, funding data, etc. (takes longer but provides richer insights)"
+                )
+                
+                if deep_intel:
+                    st.info("This will gather additional intelligence from multiple sources including LinkedIn, recent news, funding data, and competitive analysis.")
         
         submitted = st.form_submit_button("Generate Factsheet", type="primary")
         
@@ -244,7 +257,8 @@ def show_generator():
                     response = api_client.generate_factsheet(
                         url=normalized_url,
                         provider=provider,
-                        model=model if model else None
+                        model=model if model else None,
+                        deep_intel=deep_intel
                     )
                 
                 task_id = response['task_id']
