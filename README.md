@@ -24,15 +24,21 @@ An AI-powered Python tool that generates business intelligence factsheets from c
 
 2. **Set API key:**
    ```bash
-   export GEMINI_API_KEY='your-gemini-api-key-here'
-   # or
    export OPENAI_API_KEY='your-openai-api-key-here'
+   # or
+   export GEMINI_API_KEY='your-gemini-api-key-here'
    ```
 
 3. **Start web interface:**
    ```bash
    ./start-web.sh
    ```
+   
+   The `start-web.sh` script automatically:
+   - Starts the FastAPI backend server on port 8000
+   - Launches the Streamlit frontend on port 8501
+   - Opens the web app in your default browser
+   - Handles graceful shutdown when you press Ctrl+C
 
 4. **Access the application:**
    - **Web App**: http://localhost:8501
@@ -55,7 +61,7 @@ python src/main.py --csv companies.csv --select 0
 ```
 
 #### CLI Options
-- `--provider {gemini,openai}`: AI provider (default: gemini)
+- `--provider {openai,gemini}`: AI provider (default: openai)
 - `--model`: Specific model name (optional)
 - `--output-dir`: Output directory (default: factsheets/)
 - `--verbose`: Enable detailed logging
@@ -70,7 +76,8 @@ python src/main.py --csv companies.csv --select 0
 
 ### Generator
 - Simple URL input with validation and auto-completion
-- AI provider selection (Gemini/OpenAI)
+- AI provider selection (OpenAI/Gemini) with smart model selection
+- Dropdown menus for available models based on selected provider
 - Real-time progress tracking with status updates
 - Immediate results display
 
@@ -97,7 +104,7 @@ python src/main.py --csv companies.csv --select 0
 ```bash
 curl -X POST "http://localhost:8000/api/generate" \
   -H "Content-Type: application/json" \
-  -d '{"url": "https://stripe.com", "provider": "gemini"}'
+  -d '{"url": "https://stripe.com", "provider": "openai", "model": "gpt-4o-mini"}'
 ```
 
 **Check progress:**
@@ -141,7 +148,7 @@ factsheet-generator/
 ### Technology Stack
 - **Backend**: FastAPI, Uvicorn, Pydantic, aiofiles
 - **Frontend**: Streamlit, Plotly, Pandas
-- **AI Providers**: Google Gemini 2.0 Flash, OpenAI GPT-3.5/4
+- **AI Providers**: OpenAI, Google Gemini
 - **Web Scraping**: BeautifulSoup4, Requests
 - **Development**: Python 3.8+, Virtual environments
 
@@ -170,15 +177,11 @@ The included `companies.csv` contains 6 diverse companies for testing:
 ### API Keys (.env file)
 ```bash
 # AI Provider API Keys (choose one or both)
-GEMINI_API_KEY=your_gemini_api_key_here
 OPENAI_API_KEY=your_openai_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
 
-# Default provider: gemini (free tier available)
-# Alternative: openai (requires paid account)
-
-# Default AI models (can be overridden with --model flag)
-# Gemini: gemini-2.0-flash-exp, gemini-1.5-flash, gemini-1.5-pro
-# OpenAI: gpt-3.5-turbo, gpt-4, gpt-4-turbo
+# Default provider: openai (recommended for quality)
+# Alternative: gemini (free tier available)
 ```
 
 ## Development
