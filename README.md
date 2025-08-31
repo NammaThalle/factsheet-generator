@@ -8,10 +8,8 @@ An AI-powered Python tool that generates business intelligence factsheets from c
 - **REST API**: FastAPI backend with async processing and auto-generated documentation  
 - **Web Scraping**: Intelligent content extraction from company homepages and About pages
 - **AI-Powered Analysis**: OpenAI GPT integration
-- **Sales-Focused**: Creates actionable intelligence optimized for discovery calls
 - **CLI Interface**: Full-featured command line tool for automation
 - **Batch Processing**: Process multiple companies from CSV files
-- **Beautiful Logging**: Colored, structured logs with file:line navigation
 
 ## Quick Start
 
@@ -73,8 +71,7 @@ python src/main.py --csv companies.csv --select 0
 - Quick actions (view, delete, download)
 
 ### Generator
-- Simple URL input with validation and auto-completion
-- OpenAI model selection with smart model detection
+- Simple URL input with validation
 - Dropdown menus for available OpenAI models
 - Real-time progress tracking with status updates
 - Immediate results display
@@ -172,7 +169,7 @@ The included `companies.csv` contains 6 diverse companies for testing:
 
 ## Environment Setup
 
-### API Keys (.env file)
+### API Keys (.env file - refer .env.example file)
 ```bash
 # OpenAI API Key
 OPENAI_API_KEY=your_openai_api_key_here
@@ -272,12 +269,14 @@ python src/main.py --url https://example.com --verbose
 - **Database**: PostgreSQL/MongoDB for factsheet storage
 - **Templates**: Industry-specific factsheet formats
 - **Additional AI Providers**: Support for other LLM providers
+- **Deep Intelligence**: Merge advanced LinkedIn, news sentiment, and funding data from experimental branch
 - **Selenium Integration**: Use Selenium to load complete pages and parse with BeautifulSoup for dynamic content that loads after scrolling
 - **News Article Parser**: Try newspaper3k instead of BeautifulSoup to check if it performs better for content extraction
 - **Intelligent Model Selection**: Automatically pick the optimal model based on content complexity to improve cost efficiency
 - **Hallucination Detection**: Add validation checks to ensure generated factsheets are grounded in scraped data without LLM hallucinations
 - **Deployment**: Docker containers and cloud hosting
 
----
+## Development Branch
 
-**Built with modern Python technologies for professional sales intelligence.**
+### Deep Web Intelligence (Experimental)
+A `feature/deep-web-intelligence` branch exists with advanced intelligence gathering capabilities that extend beyond basic web scraping. This experimental feature adds LinkedIn data extraction, news sentiment analysis, funding intelligence to generate  richer and more detailed company factsheets with proper business insights. Due to time constraints, this feature was not thoroughly tested and therefore not merged into the main branch.
