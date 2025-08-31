@@ -53,7 +53,7 @@ async def startup_event():
     factsheets_dir = Path("factsheets")
     factsheets_dir.mkdir(exist_ok=True)
     
-    logger.success("API server startup complete")
+    logger.info("API server startup complete")
 
 @app.on_event("shutdown")
 async def shutdown_event():

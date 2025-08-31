@@ -7,8 +7,7 @@ from datetime import datetime
 class GenerateRequest(BaseModel):
     """Request model for factsheet generation"""
     url: HttpUrl = Field(..., description="Company website URL to analyze")
-    provider: str = Field(default="gemini", description="AI provider to use")
-    model: Optional[str] = Field(None, description="Specific model to use")
+    model: Optional[str] = Field(None, description="Specific OpenAI model to use")
 
 class GenerateResponse(BaseModel):
     """Response model for factsheet generation"""
@@ -47,8 +46,7 @@ class FactsheetContent(BaseModel):
 class BulkGenerateRequest(BaseModel):
     """Request for bulk factsheet generation"""
     urls: List[HttpUrl] = Field(..., description="List of company URLs")
-    provider: str = Field(default="gemini", description="AI provider to use")
-    model: Optional[str] = Field(None, description="Specific model to use")
+    model: Optional[str] = Field(None, description="Specific OpenAI model to use")
 
 class ErrorResponse(BaseModel):
     """Standard error response"""

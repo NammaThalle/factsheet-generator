@@ -70,7 +70,7 @@ def get_factsheet_metadata(filepath: Path) -> FactsheetMetadata:
             word_count=len(content.split()),
             created_at=datetime.fromtimestamp(stats.st_mtime),
             file_size=stats.st_size,
-            provider="gemini"  # Default, could be extracted from content
+            provider="openai"
         )
     except Exception as e:
         logger.error(f"Error extracting metadata from {filepath}: {e}")
@@ -84,7 +84,7 @@ def get_factsheet_metadata(filepath: Path) -> FactsheetMetadata:
             provider="unknown"
         )
 
-async def generate_factsheet_task(task_id: str, url: str, provider: str, model: Optional[str]):
+async def generate_factsheet_task(task_id: str, url: str, model: Optional[str]):
     """Background task to generate factsheet"""
     try:
         tasks[task_id].status = "processing"
@@ -100,10 +100,10 @@ async def generate_factsheet_task(task_id: str, url: str, provider: str, model: 
             return
         
         tasks[task_id].progress = 50
-        tasks[task_id].message = f"Generating factsheet with {provider.upper()}..."
+        tasks[task_id].message = "Generating factsheet with OpenAI..."
         
         # Step 2: Generate factsheet
-        factsheet_content = create_factsheet(company_data, provider=provider, model=model)
+        factsheet_content = create_factsheet(company_data, model=model)
         
         if not factsheet_content:
             tasks[task_id].status = "failed"
@@ -141,7 +141,7 @@ async def generate_factsheet_task(task_id: str, url: str, provider: str, model: 
             "company_name": company_name
         }
         
-        logger.success(f"Factsheet generated: {filename}")
+        logger.info(f"Factsheet generated: {filename}")
         
     except Exception as e:
         tasks[task_id].status = "failed"
@@ -166,7 +166,6 @@ async def generate_factsheet(request: GenerateRequest, background_tasks: Backgro
         generate_factsheet_task,
         task_id,
         str(request.url),
-        request.provider,
         request.model
     )
     
