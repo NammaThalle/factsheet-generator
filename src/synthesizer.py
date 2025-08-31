@@ -14,7 +14,6 @@ load_dotenv()
 
 class FactsheetSynthesizer:
     def __init__(self, model=None):
-        self.provider = "openai"
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         self.model = model or "gpt-4o-mini"
         if not os.getenv("OPENAI_API_KEY"):
@@ -99,7 +98,7 @@ Only use fallback phrases when information is genuinely not extractable from con
     
     def _generate_with_openai(self, prompt):
         """Generate factsheet using OpenAI with evidence-based approach"""
-        # GPT-5 models don't support temperature parameter
+        # Prepare request parameters
         kwargs = {
             "model": self.model,
             "messages": [
@@ -108,7 +107,7 @@ Only use fallback phrases when information is genuinely not extractable from con
             ]
         }
         
-        # Only add temperature for non-GPT-5 models
+        # Add temperature setting for compatible models
         if "gpt-5" not in self.model.lower():
             kwargs["temperature"] = 0.2
             

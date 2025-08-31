@@ -89,7 +89,7 @@ def main():
 Examples:
   python src/main.py --url https://company.com/
   python src/main.py --csv companies.csv --select 0
-  python src/main.py --url https://company.com/ --provider openai
+  python src/main.py --url https://company.com/ --model gpt-4o-mini
         """
     )
     
