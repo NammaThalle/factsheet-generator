@@ -276,6 +276,15 @@ python src/main.py --url https://example.com --verbose
 - **Hallucination Detection**: Add validation checks to ensure generated factsheets are grounded in scraped data without LLM hallucinations
 - **Deployment**: Docker containers and cloud hosting
 
+## Beyond the Assignment
+
+While the original technical take-home requested a basic Python pipeline for single URL processing with CLI output, this implementation exceeds those requirements:
+
+**Enhanced Architecture**: Evolved from a simple CLI script to a full-stack application with FastAPI backend, Streamlit frontend, and REST API endpoints. 
+**Usable User Experience**: Added an intuitive web interface with dashboard analytics, batch processing capabilities, and comprehensive file management features.
+**Advanced Intelligence Gathering**: Implemented sophisticated error handling, timeout management, and user-friendly feedback systems. The experimental deep-web-intelligence branch extends capabilities far beyond basic web scraping to include LinkedIn data, news sentiment analysis, and funding intelligence.
+**Production Readiness**: Built including proper logging systems, Pydantic data validation, async processing, and structured project architecture that supports both development and deployment scenarios.
+
 ## Development Branch
 
 ### Deep Web Intelligence (Experimental)
