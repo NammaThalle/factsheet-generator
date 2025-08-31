@@ -15,7 +15,16 @@ from src.logger import logger
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../shared"))
 from utils import APIClient, wait_for_task_completion, format_file_size, validate_url, normalize_url, get_company_name_from_url
-from model_utils import get_openai_models
+
+# OpenAI models for factsheet generation
+OPENAI_MODELS = {
+    'gpt-5-nano': 'gpt-5-nano-2025-08-07',
+    'gpt-4o-mini': 'gpt-4o-mini-2024-07-18',
+    'gpt-4o': 'gpt-4o-2024-11-20',
+    'gpt-5-mini': 'gpt-5-mini-2025-08-07',
+    'gpt-4-turbo': 'gpt-4-turbo-2024-04-09',
+    'gpt-5': 'gpt-5-2025-08-07', 
+}
 
 # Page config
 st.set_page_config(
@@ -187,6 +196,7 @@ def show_dashboard():
                     st.divider()
         else:
             logger.info("No factsheets generated yet. Use the Generator to create your first one!")
+            st.info("No factsheets generated yet. Use the Generator to create your first one!")
     
     except Exception as e:
         logger.error(f"Error loading dashboard: {e}")
@@ -233,16 +243,6 @@ def show_generator():
     </style>
     """, unsafe_allow_html=True)
     
-    if 'models_cache' not in st.session_state:
-        st.session_state.models_cache = {}
-        logger.info("Initialized models_cache")
-    if 'current_provider' not in st.session_state:
-        st.session_state.current_provider = None
-        logger.info("Initialized current_provider")
-        
-    # Only OpenAI provider supported
-    provider = "openai"
-    
     with st.form("factsheet_generator"):
         st.subheader("Company Information")
         
@@ -254,57 +254,24 @@ def show_generator():
         
         st.subheader("Model Configuration")
         
-        logger.info(f"Current provider in session: {st.session_state.current_provider}")
-        logger.info(f"Using provider: {provider}")
-        
-        if st.session_state.current_provider != provider:
-            logger.info(f"Provider changed from {st.session_state.current_provider} to {provider}")
-            st.session_state.current_provider = provider
-        else:
-            logger.info("Provider unchanged")
-        
-        logger.info(f"Checking if {provider} in models_cache: {provider in st.session_state.models_cache}")
-        
-        if provider not in st.session_state.models_cache:
-            logger.info(f"Loading models for {provider}...")
-            with st.spinner(f"Loading OpenAI models..."):
-                try:
-                    logger.info("Calling get_openai_models()")
-                    models_dict = get_openai_models()
-                    logger.info(f"get_openai_models() returned {len(models_dict)} models")
-                    
-                    logger.info(f"Caching models for {provider}: {list(models_dict.keys())[:3] if models_dict else 'Empty'}")
-                    st.session_state.models_cache[provider] = models_dict
-                except Exception as e:
-                    logger.error(f"Exception in model loading: {str(e)}")
-                    logger.error(f"Error loading OpenAI models: {str(e)}")
-                    models_dict = {}
-                    st.session_state.models_cache[provider] = {}
-        else:
-            logger.info(f"Using cached models for {provider}")
-            models_dict = st.session_state.models_cache[provider]
-            logger.info(f"Cached models count: {len(models_dict)}")
-        
-        if models_dict:
-            logger.info(f"Processing {len(models_dict)} models")
-            model_options = list(models_dict.values())
-            model_ids = list(models_dict.keys())
+        if OPENAI_MODELS:
+            logger.info(f"Processing {len(OPENAI_MODELS)} models")
+            model_display_names = list(OPENAI_MODELS.keys())
             
-            selected_model_label = st.selectbox(
-                "Model",
-                model_options,
-                help=f"Select a {provider.upper()} model for factsheet generation"
+            selected_model_key = st.selectbox(
+                "OpenAI Model",
+                model_display_names,
+                help="Select an OpenAI model for factsheet generation"
             )
             
-            logger.info(f"Selected model label: {selected_model_label}")
-            selected_model = model_ids[model_options.index(selected_model_label)]
+            logger.info(f"Selected model key: {selected_model_key}")
+            selected_model = OPENAI_MODELS[selected_model_key]
             logger.info(f"Selected model ID: {selected_model}")
         else:
             logger.error("No OpenAI models available")
             st.warning("No OpenAI models available")
             if not os.getenv("OPENAI_API_KEY"):
                 logger.error("OpenAI API key not found")
-                st.info("Set your OpenAI API key: `export OPENAI_API_KEY='your-key'`")
             selected_model = None
         
         submitted = st.form_submit_button(
@@ -355,9 +322,24 @@ def show_generator():
                                 st.metric("Status", "Complete")
                                 
                         except Exception as e:
-                            logger.error(f"Generation failed: {e}")
+                            error_message = str(e)
+                            logger.error(f"Generation failed: {error_message}")
+                            
+                            # Show user-friendly error messages
+                            if "Failed to scrape" in error_message:
+                                if "timed out" in error_message.lower():
+                                    st.error("Website took too long to respond. This website might be blocking automated requests or experiencing issues.")
+                                else:
+                                    st.error("Unable to access the website. Please check the URL or try a different website.")
+                            elif "Connection error" in error_message:
+                                st.error("Network connection error. Please check your internet connection and try again.")
+                            else:
+                                st.error(f"Generation failed: {error_message}")
+                                
                     except Exception as e:
-                        logger.error(f"Error starting generation: {e}")
+                        error_message = str(e)
+                        logger.error(f"Error starting generation: {error_message}")
+                        st.error(f"Failed to start generation: {error_message}")
     
     if st.session_state.get('generation_completed', False):
         st.markdown("---")
