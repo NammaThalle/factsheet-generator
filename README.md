@@ -7,7 +7,7 @@ An AI-powered Python tool that generates business intelligence factsheets from c
 - **Web Interface**: Interactive Streamlit dashboard with real-time generation and analytics
 - **REST API**: FastAPI backend with async processing and auto-generated documentation  
 - **Web Scraping**: Intelligent content extraction from company homepages and About pages
-- **AI-Powered Analysis**: Multi-provider support (Gemini 2.0 Flash & OpenAI GPT)
+- **AI-Powered Analysis**: OpenAI GPT integration
 - **Sales-Focused**: Creates actionable intelligence optimized for discovery calls
 - **CLI Interface**: Full-featured command line tool for automation
 - **Batch Processing**: Process multiple companies from CSV files
@@ -25,8 +25,6 @@ An AI-powered Python tool that generates business intelligence factsheets from c
 2. **Set API key:**
    ```bash
    export OPENAI_API_KEY='your-openai-api-key-here'
-   # or
-   export GEMINI_API_KEY='your-gemini-api-key-here'
    ```
 
 3. **Start web interface:**
@@ -61,7 +59,7 @@ python src/main.py --csv companies.csv --select 0
 ```
 
 #### CLI Options
-- `--provider {openai,gemini}`: AI provider (default: openai)
+- `--model`: Specific OpenAI model name (optional)
 - `--model`: Specific model name (optional)
 - `--output-dir`: Output directory (default: factsheets/)
 - `--verbose`: Enable detailed logging
@@ -76,8 +74,8 @@ python src/main.py --csv companies.csv --select 0
 
 ### Generator
 - Simple URL input with validation and auto-completion
-- AI provider selection (OpenAI/Gemini) with smart model selection
-- Dropdown menus for available models based on selected provider
+- OpenAI model selection with smart model detection
+- Dropdown menus for available OpenAI models
 - Real-time progress tracking with status updates
 - Immediate results display
 
@@ -104,7 +102,7 @@ python src/main.py --csv companies.csv --select 0
 ```bash
 curl -X POST "http://localhost:8000/api/generate" \
   -H "Content-Type: application/json" \
-  -d '{"url": "https://stripe.com", "provider": "openai", "model": "gpt-4o-mini"}'
+  -d '{"url": "https://stripe.com", "model": "gpt-4o-mini"}'
 ```
 
 **Check progress:**
@@ -125,7 +123,7 @@ factsheet-generator/
 ├── src/                    # Core CLI application
 │   ├── main.py            # CLI entry point
 │   ├── scraper.py         # Web scraping engine
-│   ├── synthesizer.py     # AI integration (Gemini/OpenAI)
+│   ├── synthesizer.py     # AI integration (OpenAI)
 │   ├── logger.py          # Beautiful colored logging
 │   └── models.py          # Pydantic data models
 ├── web/                   # Web interface
@@ -148,7 +146,7 @@ factsheet-generator/
 ### Technology Stack
 - **Backend**: FastAPI, Uvicorn, Pydantic, aiofiles
 - **Frontend**: Streamlit, Plotly, Pandas
-- **AI Providers**: OpenAI, Google Gemini
+- **AI Provider**: OpenAI GPT
 - **Web Scraping**: BeautifulSoup4, Requests
 - **Development**: Python 3.8+, Virtual environments
 
@@ -176,12 +174,8 @@ The included `companies.csv` contains 6 diverse companies for testing:
 
 ### API Keys (.env file)
 ```bash
-# AI Provider API Keys (choose one or both)
+# OpenAI API Key
 OPENAI_API_KEY=your_openai_api_key_here
-GEMINI_API_KEY=your_gemini_api_key_here
-
-# Default provider: openai (recommended for quality)
-# Alternative: gemini (free tier available)
 ```
 
 ## Development
@@ -272,7 +266,7 @@ python src/main.py --url https://example.com --verbose
 - **Memory**: ~200MB for typical operation
 - **Storage**: Minimal (factsheets ~5-15KB each)
 - **Network**: Internet connection for web scraping and AI APIs
-- **API Keys**: Gemini (free tier) or OpenAI (paid) account
+- **API Keys**: OpenAI account required
 
 ## Next Steps
 
@@ -283,6 +277,7 @@ python src/main.py --url https://example.com --verbose
 - **Templates**: Industry-specific factsheet formats
 - **Integrations**: CRM export (Salesforce, HubSpot)
 - **Analytics**: Advanced reporting and insights
+- **Additional AI Providers**: Support for other LLM providers
 - **Deployment**: Docker containers and cloud hosting
 
 ---
