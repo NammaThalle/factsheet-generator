@@ -1,36 +1,24 @@
 """
 AI Synthesis Module
 
-Generates business intelligence factsheets using OpenAI GPT or Google Gemini models.
-Supports multiple providers and models with consistent output formatting.
+Generates business intelligence factsheets using OpenAI GPT models.
 """
 
 import os
 from pathlib import Path
 from openai import OpenAI
-import google.generativeai as genai
 from dotenv import load_dotenv
 from logger import logger
 
 load_dotenv()
 
 class FactsheetSynthesizer:
-    def __init__(self, provider="openai", model=None):
-        self.provider = provider.lower()
-        
-        if self.provider == "openai":
-            self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-            self.model = model or "gpt-4o-mini"
-            if not os.getenv("OPENAI_API_KEY"):
-                raise ValueError("OPENAI_API_KEY environment variable not set")
-                
-        elif self.provider == "gemini":
-            genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-            self.model = model or "gemini-2.5-pro"
-            if not os.getenv("GEMINI_API_KEY"):
-                raise ValueError("GEMINI_API_KEY environment variable not set")
-        else:
-            raise ValueError(f"Unsupported provider: {provider}")
+    def __init__(self, model=None):
+        self.provider = "openai"
+        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        self.model = model or "gpt-4o-mini"
+        if not os.getenv("OPENAI_API_KEY"):
+            raise ValueError("OPENAI_API_KEY environment variable not set")
     
     def create_synthesis_prompt(self, company_data):
         """Create a structured prompt for factsheet generation with anti-hallucination safeguards"""
@@ -78,7 +66,7 @@ CRITICAL RULES:
 3. NO generic conversation starters - make them specific to this company
 4. Extract actual company details, not industry generics
 5. Keep responses concise but informative
-6. Target 500-700 words total
+6. Target 800-900 words total only. Should not exceed this limit at any cost
 
 SMART EXTRACTION:
 - Mission: Look for taglines, "About" messaging, company purpose statements
@@ -97,16 +85,13 @@ Only use fallback phrases when information is genuinely not extractable from con
         return prompt
     
     def generate_factsheet(self, company_data):
-        """Generate factsheet using specified AI provider"""
+        """Generate factsheet using OpenAI"""
         try:
             prompt = self.create_synthesis_prompt(company_data)
             
-            logger.info(f"Generating factsheet for {company_data.get('url')} using {self.provider}")
+            logger.info(f"Generating factsheet for {company_data.get('url')} using OpenAI")
             
-            if self.provider == "openai":
-                return self._generate_with_openai(prompt)
-            elif self.provider == "gemini":
-                return self._generate_with_gemini(prompt)
+            return self._generate_with_openai(prompt)
                 
         except Exception as e:
             logger.error(f"Error generating factsheet: {str(e)}")
@@ -114,37 +99,28 @@ Only use fallback phrases when information is genuinely not extractable from con
     
     def _generate_with_openai(self, prompt):
         """Generate factsheet using OpenAI with evidence-based approach"""
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
+        # GPT-5 models don't support temperature parameter
+        kwargs = {
+            "model": self.model,
+            "messages": [
                 {"role": "system", "content": "You are a business analyst creating evidence-based sales intelligence factsheets. Only use information directly stated in the provided content."},
                 {"role": "user", "content": prompt}
-            ],
-            temperature=0.2
-        )
+            ]
+        }
         
-        factsheet = response.choices[0].message.content.strip()
+        # Only add temperature for non-GPT-5 models
+        if "gpt-5" not in self.model.lower():
+            kwargs["temperature"] = 0.2
+            
+        response = self.client.chat.completions.create(**kwargs)
+        
+        content = response.choices[0].message.content
+        factsheet = content.strip() if content else ""
         factsheet = self._clean_factsheet_output(factsheet)
         word_count = len(factsheet.split())
         logger.info(f"Generated factsheet with {word_count} words using OpenAI")
         return factsheet
     
-    def _generate_with_gemini(self, prompt):
-        """Generate factsheet using Gemini with evidence-based approach"""
-        model = genai.GenerativeModel(self.model)
-        
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
-                temperature=0.2
-            )
-        )
-        
-        factsheet = response.text.strip()
-        factsheet = self._clean_factsheet_output(factsheet)
-        word_count = len(factsheet.split())
-        logger.info(f"Generated factsheet with {word_count} words using Gemini")
-        return factsheet
     
     def _clean_factsheet_output(self, factsheet):
         """Clean and post-process the generated factsheet"""
@@ -178,7 +154,7 @@ Only use fallback phrases when information is genuinely not extractable from con
         
         return '\n'.join(cleaned_lines)
 
-def create_factsheet(company_data, provider="openai", model=None):
+def create_factsheet(company_data, model=None):
     """Main function to create factsheet from company data"""
-    synthesizer = FactsheetSynthesizer(provider=provider, model=model)
+    synthesizer = FactsheetSynthesizer(model=model)
     return synthesizer.generate_factsheet(company_data)
