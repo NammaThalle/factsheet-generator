@@ -75,11 +75,16 @@ def wait_for_task_completion(api_client: APIClient, task_id: str, progress_bar=N
             if status['status'] == 'completed':
                 return status
             elif status['status'] == 'failed':
-                raise Exception(status.get('error', 'Task failed'))
+                error_msg = status.get('error', 'Task failed')
+                raise Exception(error_msg)
             
             time.sleep(1)  # Poll every second
             
+        except requests.exceptions.RequestException as e:
+            raise Exception(f"Connection error: {e}")
         except Exception as e:
+            if "Task failed" in str(e) or "Failed to scrape" in str(e):
+                raise e  # Re-raise task failures directly
             raise Exception(f"Error checking task status: {e}")
 
 def format_file_size(size_bytes: int) -> str:
