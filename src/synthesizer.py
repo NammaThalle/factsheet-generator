@@ -6,6 +6,7 @@ Supports multiple providers and models with consistent output formatting.
 """
 
 import os
+from pathlib import Path
 from openai import OpenAI
 import google.generativeai as genai
 from dotenv import load_dotenv
@@ -25,17 +26,26 @@ class FactsheetSynthesizer:
                 
         elif self.provider == "gemini":
             genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-            self.model = model or "gemini-2.0-flash-exp"
+            self.model = model or "gemini-2.5-pro"
             if not os.getenv("GEMINI_API_KEY"):
                 raise ValueError("GEMINI_API_KEY environment variable not set")
         else:
             raise ValueError(f"Unsupported provider: {provider}")
     
     def create_synthesis_prompt(self, company_data):
-        """Create a structured prompt for factsheet generation"""
+        """Create a structured prompt for factsheet generation with anti-hallucination safeguards"""
         homepage = company_data.get('homepage', {})
         about = company_data.get('about', {})
         url = company_data.get('url', '')
+        
+        # Load the template
+        template_path = Path(__file__).parent / "factsheet_template.md"
+        try:
+            with open(template_path, 'r', encoding='utf-8') as f:
+                template_content = f.read()
+        except Exception:
+            logger.warning("Could not load factsheet template, using fallback")
+            template_content = "# [Company Name] - Sales Intelligence Factsheet\n\n[Use template structure]"
         
         # Combine available content
         content_parts = []
@@ -54,20 +64,35 @@ class FactsheetSynthesizer:
         
         content_text = "\n\n".join(content_parts)
         
-        prompt = f"""Create a comprehensive business factsheet for sales representatives preparing for discovery calls.
+        prompt = f"""Create a sales intelligence factsheet using the website content provided. Extract specific, actionable information.
 
-Company Website: {url}
+Website: {url}
+Content: {content_text}
 
-Available Information:
-{content_text}
+Follow this template exactly:
+{template_content}
 
-Create a 600-1000 word factsheet in Markdown format covering:
-1. Company Overview (mission, value propositions)
-2. Products & Services (offerings, target markets)  
-3. Business Intelligence (size, market position)
-4. Sales Insights (conversation starters, potential pain points)
+CRITICAL RULES:
+1. Use SPECIFIC information from the website content
+2. NO placeholder text like "[Target Market]" or generic templates
+3. NO generic conversation starters - make them specific to this company
+4. Extract actual company details, not industry generics
+5. Keep responses concise but informative
+6. Target 500-700 words total
 
-Focus on actionable intelligence for sales conversations."""
+SMART EXTRACTION:
+- Mission: Look for taglines, "About" messaging, company purpose statements
+- Business Model: Infer from pricing, products, how they operate
+- Pain Points: What problems do their solutions specifically solve?
+- Conversation Starters: Based on their actual products/services
+
+EXAMPLES:
+✅ GOOD: "How are you currently handling international payment processing?" (for Stripe)
+✅ GOOD: "Mission: Increase the GDP of the internet" (Stripe's actual tagline)
+❌ BAD: "Are you looking for [service] solutions?" (generic template)
+❌ BAD: "[Target Market] companies" (placeholder)
+
+Only use fallback phrases when information is genuinely not extractable from content."""
 
         return prompt
     
@@ -88,38 +113,70 @@ Focus on actionable intelligence for sales conversations."""
             return None
     
     def _generate_with_openai(self, prompt):
-        """Generate factsheet using OpenAI"""
+        """Generate factsheet using OpenAI with evidence-based approach"""
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[
-                {"role": "system", "content": "You are a business analyst creating sales intelligence factsheets."},
+                {"role": "system", "content": "You are a business analyst creating evidence-based sales intelligence factsheets. Only use information directly stated in the provided content."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.3,
-            max_tokens=1200
+            temperature=0.2
         )
         
         factsheet = response.choices[0].message.content.strip()
+        factsheet = self._clean_factsheet_output(factsheet)
         word_count = len(factsheet.split())
         logger.info(f"Generated factsheet with {word_count} words using OpenAI")
         return factsheet
     
     def _generate_with_gemini(self, prompt):
-        """Generate factsheet using Gemini"""
+        """Generate factsheet using Gemini with evidence-based approach"""
         model = genai.GenerativeModel(self.model)
         
         response = model.generate_content(
             prompt,
             generation_config=genai.types.GenerationConfig(
-                temperature=0.3,
-                max_output_tokens=1200
+                temperature=0.2
             )
         )
         
         factsheet = response.text.strip()
+        factsheet = self._clean_factsheet_output(factsheet)
         word_count = len(factsheet.split())
         logger.info(f"Generated factsheet with {word_count} words using Gemini")
         return factsheet
+    
+    def _clean_factsheet_output(self, factsheet):
+        """Clean and post-process the generated factsheet"""
+        if not factsheet:
+            return factsheet
+            
+        # Remove markdown code block markers that shouldn't be there
+        factsheet = factsheet.replace('```markdown', '').replace('```', '')
+        
+        # Remove any leading/trailing whitespace
+        factsheet = factsheet.strip()
+        
+        # Ensure proper title format (remove any duplicate titles)
+        lines = factsheet.split('\n')
+        cleaned_lines = []
+        title_found = False
+        
+        for line in lines:
+            line = line.strip()
+            if not line:
+                cleaned_lines.append('')
+                continue
+                
+            # Skip duplicate titles after the first one
+            if line.startswith('# ') and 'Sales Intelligence Factsheet' in line:
+                if title_found:
+                    continue
+                title_found = True
+            
+            cleaned_lines.append(line)
+        
+        return '\n'.join(cleaned_lines)
 
 def create_factsheet(company_data, provider="gemini", model=None):
     """Main function to create factsheet from company data"""
