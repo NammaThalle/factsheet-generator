@@ -3,6 +3,7 @@
 import logging
 import os
 import sys
+import inspect
 from datetime import datetime
 
 class ColoredFormatter(logging.Formatter):
@@ -29,7 +30,7 @@ class ColoredFormatter(logging.Formatter):
         # Format timestamp (date and time, no milliseconds)
         timestamp = datetime.fromtimestamp(record.created).strftime('%Y-%m-%d %H:%M:%S')
         
-        # Format filename:line for VS Code clickability
+        # Use the record's pathname and lineno (should now be correct)
         filename = os.path.basename(record.pathname)
         location = f"{filename}:{record.lineno}"
         
@@ -89,30 +90,53 @@ class FactsheetLogger:
         for logger_name in external_loggers:
             logging.getLogger(logger_name).setLevel(logging.WARNING)
     
+    def _log_with_caller(self, level, message):
+        """Log with proper caller information"""
+        frame = inspect.currentframe()
+        try:
+            # Get the caller's frame (skip this method and the public method)
+            caller_frame = frame.f_back.f_back
+            if caller_frame:
+                # Create a new log record with the caller's information
+                record = logging.LogRecord(
+                    name=self.logger.name,
+                    level=level,
+                    pathname=caller_frame.f_code.co_filename,
+                    lineno=caller_frame.f_lineno,
+                    msg=message,
+                    args=(),
+                    exc_info=None
+                )
+                self.logger.handle(record)
+            else:
+                # Fallback to normal logging
+                self.logger.log(level, message)
+        finally:
+            del frame
+    
     def debug(self, message: str):
         """Log debug message"""
-        self.logger.debug(message)
+        self._log_with_caller(logging.DEBUG, message)
     
     def info(self, message: str):
         """Log info message"""
-        self.logger.info(message)
+        self._log_with_caller(logging.INFO, message)
     
     def success(self, message: str):
         """Log success message"""
-        # Custom level for success messages
-        self.logger.log(25, message)  # Between INFO(20) and WARNING(30)
+        self._log_with_caller(25, message)  # Between INFO(20) and WARNING(30)
     
     def warning(self, message: str):
         """Log warning message"""
-        self.logger.warning(message)
+        self._log_with_caller(logging.WARNING, message)
     
     def error(self, message: str):
         """Log error message"""
-        self.logger.error(message)
+        self._log_with_caller(logging.ERROR, message)
     
     def critical(self, message: str):
         """Log critical message"""
-        self.logger.critical(message)
+        self._log_with_caller(logging.CRITICAL, message)
     
     def step(self, step_num: int, message: str):
         """Log a step in the process"""
