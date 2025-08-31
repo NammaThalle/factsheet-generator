@@ -31,7 +31,6 @@ class FactsheetMetadata(BaseModel):
     word_count: int
     created_at: datetime
     file_size: int
-    provider: str
 
 class FactsheetListResponse(BaseModel):
     """Response for listing factsheets"""
@@ -43,13 +42,3 @@ class FactsheetContent(BaseModel):
     metadata: FactsheetMetadata
     content: str
 
-class BulkGenerateRequest(BaseModel):
-    """Request for bulk factsheet generation"""
-    urls: List[HttpUrl] = Field(..., description="List of company URLs")
-    model: Optional[str] = Field(None, description="Specific OpenAI model to use")
-
-class ErrorResponse(BaseModel):
-    """Standard error response"""
-    error: str
-    detail: Optional[str] = None
-    status_code: int

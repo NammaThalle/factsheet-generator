@@ -1,20 +1,18 @@
 """API routes for the factsheet generator web interface"""
 
 import os
-import asyncio
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks, UploadFile, File
+from fastapi import APIRouter, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 import aiofiles
 
 from .models import (
     GenerateRequest, GenerateResponse, TaskStatus, 
-    FactsheetMetadata, FactsheetListResponse, FactsheetContent,
-    BulkGenerateRequest, ErrorResponse
+    FactsheetMetadata, FactsheetListResponse, FactsheetContent
 )
 
 # Import existing components
@@ -69,8 +67,7 @@ def get_factsheet_metadata(filepath: Path) -> FactsheetMetadata:
             url=url,
             word_count=len(content.split()),
             created_at=datetime.fromtimestamp(stats.st_mtime),
-            file_size=stats.st_size,
-            provider="openai"
+            file_size=stats.st_size
         )
     except Exception as e:
         logger.error(f"Error extracting metadata from {filepath}: {e}")
@@ -80,8 +77,7 @@ def get_factsheet_metadata(filepath: Path) -> FactsheetMetadata:
             url="Unknown",
             word_count=0,
             created_at=datetime.now(),
-            file_size=filepath.stat().st_size,
-            provider="unknown"
+            file_size=filepath.stat().st_size
         )
 
 async def generate_factsheet_task(task_id: str, url: str, model: Optional[str]):
