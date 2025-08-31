@@ -14,6 +14,7 @@ import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../shared"))
 from utils import APIClient, wait_for_task_completion, format_file_size, validate_url, normalize_url, get_company_name_from_url
+from model_utils import get_available_models
 
 # Page config
 st.set_page_config(
@@ -212,17 +213,41 @@ def show_generator():
             st.markdown("**AI Provider**")
             provider = st.selectbox(
                 "Provider",
-                ["gemini", "openai"],
-                help="Gemini is free, OpenAI requires API key"
+                ["openai", "gemini"],
+                help="OpenAI requires API key, Gemini is free"
             )
         
-        # Advanced options
-        with st.expander("Advanced Options"):
-            model = st.text_input(
-                "Custom Model",
-                placeholder="Leave empty for default",
-                help="Specify a custom model name (optional)"
+        # Model selection based on provider
+        st.subheader("Model Selection")
+        
+        # Get available models dynamically
+        with st.spinner("Loading available models..."):
+            try:
+                all_models = get_available_models()
+                available_models = all_models.get(provider, {})
+            except Exception as e:
+                st.error(f"Error loading models: {str(e)}")
+                available_models = {}
+        
+        # Prepare model selection
+        model_names = list(available_models.keys())
+        model_labels = [available_models[name] for name in model_names]
+        
+        if model_names:
+            selected_model_label = st.selectbox(
+                "Model",
+                model_labels,
+                help=f"Choose a {provider.upper()} model for factsheet generation"
             )
+            # Get the actual model name from the selected label
+            model = model_names[model_labels.index(selected_model_label)]
+        else:
+            model = None
+            st.warning(f"No models available for {provider}. Please check your API key.")
+            if provider == "openai" and not os.getenv("OPENAI_API_KEY"):
+                st.info("Set your OpenAI API key: `export OPENAI_API_KEY='your-key'`")
+            elif provider == "gemini" and not os.getenv("GEMINI_API_KEY"):
+                st.info("Set your Gemini API key: `export GEMINI_API_KEY='your-key'`")
         
         submitted = st.form_submit_button("Generate Factsheet", type="primary")
         
