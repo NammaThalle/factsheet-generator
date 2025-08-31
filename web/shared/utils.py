@@ -12,9 +12,9 @@ class APIClient:
         self.base_url = base_url.rstrip('/')
         self.session = requests.Session()
     
-    def generate_factsheet(self, url: str, provider: str = "gemini", model: Optional[str] = None) -> Dict[str, Any]:
+    def generate_factsheet(self, url: str, model: Optional[str] = None) -> Dict[str, Any]:
         """Start factsheet generation"""
-        data = {"url": url, "provider": provider}
+        data = {"url": url}
         if model:
             data["model"] = model
         
@@ -75,11 +75,16 @@ def wait_for_task_completion(api_client: APIClient, task_id: str, progress_bar=N
             if status['status'] == 'completed':
                 return status
             elif status['status'] == 'failed':
-                raise Exception(status.get('error', 'Task failed'))
+                error_msg = status.get('error', 'Task failed')
+                raise Exception(error_msg)
             
             time.sleep(1)  # Poll every second
             
+        except requests.exceptions.RequestException as e:
+            raise Exception(f"Connection error: {e}")
         except Exception as e:
+            if "Task failed" in str(e) or "Failed to scrape" in str(e):
+                raise e  # Re-raise task failures directly
             raise Exception(f"Error checking task status: {e}")
 
 def format_file_size(size_bytes: int) -> str:

@@ -44,7 +44,7 @@ def load_companies(csv_file):
         return []
     return companies
 
-def generate_factsheet_for_company(url, output_dir="factsheets", provider="gemini", model=None):
+def generate_factsheet_for_company(url, output_dir="factsheets", model=None):
     """Generate factsheet for a single company"""
     logger.info(f"Starting factsheet generation for: {url}")
     
@@ -57,8 +57,8 @@ def generate_factsheet_for_company(url, output_dir="factsheets", provider="gemin
         return False
     
     # Step 2: Generate factsheet
-    logger.step(2, f"Generating factsheet with {provider.upper()}...")
-    factsheet_content = create_factsheet(company_data, provider=provider, model=model)
+    logger.step(2, "Generating factsheet with OpenAI...")
+    factsheet_content = create_factsheet(company_data, model=model)
     
     if not factsheet_content:
         logger.error("Failed to generate factsheet")
@@ -89,7 +89,7 @@ def main():
 Examples:
   python src/main.py --url https://company.com/
   python src/main.py --csv companies.csv --select 0
-  python src/main.py --url https://company.com/ --provider openai
+  python src/main.py --url https://company.com/ --model gpt-4o-mini
         """
     )
     
@@ -102,10 +102,7 @@ Examples:
     parser.add_argument('--select', type=int, help='Select specific company index from CSV (0-based)')
     parser.add_argument('--output-dir', type=str, default='factsheets', 
                        help='Output directory for factsheet files')
-    parser.add_argument('--provider', type=str, default='gemini', 
-                       choices=['openai', 'gemini'],
-                       help='AI provider to use (default: gemini - free tier available)')
-    parser.add_argument('--model', type=str, help='AI model to use (provider-specific)')
+    parser.add_argument('--model', type=str, help='OpenAI model to use (e.g., gpt-4o-mini, gpt-4o)')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
     
     args = parser.parse_args()
@@ -113,23 +110,16 @@ Examples:
     if args.verbose:
         logger.set_verbose(True)
     
-    # Validate API key based on provider
-    if args.provider == "openai":
-        if not os.getenv('OPENAI_API_KEY'):
-            logger.error("OPENAI_API_KEY environment variable not set")
-            logger.info("Please set your OpenAI API key:")
-            logger.info("export OPENAI_API_KEY='your-api-key-here'")
-            return 1
-    elif args.provider == "gemini":
-        if not os.getenv('GEMINI_API_KEY'):
-            logger.error("GEMINI_API_KEY environment variable not set")
-            logger.info("Please set your Gemini API key:")
-            logger.info("export GEMINI_API_KEY='your-api-key-here'")
-            return 1
+    # Validate OpenAI API key
+    if not os.getenv('OPENAI_API_KEY'):
+        logger.error("OPENAI_API_KEY environment variable not set")
+        logger.info("Please set your OpenAI API key:")
+        logger.info("export OPENAI_API_KEY='your-api-key-here'")
+        return 1
     
     # Process single URL
     if args.url:
-        success = generate_factsheet_for_company(args.url, args.output_dir, args.provider, args.model)
+        success = generate_factsheet_for_company(args.url, args.output_dir, args.model)
         return 0 if success else 1
     
     # Process from CSV
@@ -146,7 +136,7 @@ Examples:
                 company = companies[args.select]
                 logger.info(f"Processing selected company {args.select}: {company['url']}")
                 success = generate_factsheet_for_company(
-                    company['url'], args.output_dir, args.provider, args.model)
+                    company['url'], args.output_dir, args.model)
                 return 0 if success else 1
             else:
                 logger.error(f"Invalid selection {args.select}. Available indices: 0-{len(companies)-1}")

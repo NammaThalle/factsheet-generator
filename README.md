@@ -7,7 +7,7 @@ An AI-powered Python tool that generates business intelligence factsheets from c
 - **Web Interface**: Interactive Streamlit dashboard with real-time generation and analytics
 - **REST API**: FastAPI backend with async processing and auto-generated documentation  
 - **Web Scraping**: Intelligent content extraction from company homepages and About pages
-- **AI-Powered Analysis**: Multi-provider support (Gemini 2.0 Flash & OpenAI GPT)
+- **AI-Powered Analysis**: OpenAI GPT integration
 - **Sales-Focused**: Creates actionable intelligence optimized for discovery calls
 - **CLI Interface**: Full-featured command line tool for automation
 - **Batch Processing**: Process multiple companies from CSV files
@@ -24,8 +24,6 @@ An AI-powered Python tool that generates business intelligence factsheets from c
 
 2. **Set API key:**
    ```bash
-   export GEMINI_API_KEY='your-gemini-api-key-here'
-   # or
    export OPENAI_API_KEY='your-openai-api-key-here'
    ```
 
@@ -33,6 +31,12 @@ An AI-powered Python tool that generates business intelligence factsheets from c
    ```bash
    ./start-web.sh
    ```
+   
+   The `start-web.sh` script automatically:
+   - Starts the FastAPI backend server on port 8000
+   - Launches the Streamlit frontend on port 8501
+   - Opens the web app in your default browser
+   - Handles graceful shutdown when you press Ctrl+C
 
 4. **Access the application:**
    - **Web App**: http://localhost:8501
@@ -55,7 +59,7 @@ python src/main.py --csv companies.csv --select 0
 ```
 
 #### CLI Options
-- `--provider {gemini,openai}`: AI provider (default: gemini)
+- `--model`: Specific OpenAI model name (optional)
 - `--model`: Specific model name (optional)
 - `--output-dir`: Output directory (default: factsheets/)
 - `--verbose`: Enable detailed logging
@@ -70,7 +74,8 @@ python src/main.py --csv companies.csv --select 0
 
 ### Generator
 - Simple URL input with validation and auto-completion
-- AI provider selection (Gemini/OpenAI)
+- OpenAI model selection with smart model detection
+- Dropdown menus for available OpenAI models
 - Real-time progress tracking with status updates
 - Immediate results display
 
@@ -97,7 +102,7 @@ python src/main.py --csv companies.csv --select 0
 ```bash
 curl -X POST "http://localhost:8000/api/generate" \
   -H "Content-Type: application/json" \
-  -d '{"url": "https://stripe.com", "provider": "gemini"}'
+  -d '{"url": "https://stripe.com", "model": "gpt-4o-mini"}'
 ```
 
 **Check progress:**
@@ -118,7 +123,7 @@ factsheet-generator/
 ├── src/                    # Core CLI application
 │   ├── main.py            # CLI entry point
 │   ├── scraper.py         # Web scraping engine
-│   ├── synthesizer.py     # AI integration (Gemini/OpenAI)
+│   ├── synthesizer.py     # AI integration (OpenAI)
 │   ├── logger.py          # Beautiful colored logging
 │   └── models.py          # Pydantic data models
 ├── web/                   # Web interface
@@ -141,7 +146,7 @@ factsheet-generator/
 ### Technology Stack
 - **Backend**: FastAPI, Uvicorn, Pydantic, aiofiles
 - **Frontend**: Streamlit, Plotly, Pandas
-- **AI Providers**: Google Gemini 2.0 Flash, OpenAI GPT-3.5/4
+- **AI Provider**: OpenAI GPT
 - **Web Scraping**: BeautifulSoup4, Requests
 - **Development**: Python 3.8+, Virtual environments
 
@@ -169,16 +174,8 @@ The included `companies.csv` contains 6 diverse companies for testing:
 
 ### API Keys (.env file)
 ```bash
-# AI Provider API Keys (choose one or both)
-GEMINI_API_KEY=your_gemini_api_key_here
+# OpenAI API Key
 OPENAI_API_KEY=your_openai_api_key_here
-
-# Default provider: gemini (free tier available)
-# Alternative: openai (requires paid account)
-
-# Default AI models (can be overridden with --model flag)
-# Gemini: gemini-2.0-flash-exp, gemini-1.5-flash, gemini-1.5-pro
-# OpenAI: gpt-3.5-turbo, gpt-4, gpt-4-turbo
 ```
 
 ## Development
@@ -269,17 +266,16 @@ python src/main.py --url https://example.com --verbose
 - **Memory**: ~200MB for typical operation
 - **Storage**: Minimal (factsheets ~5-15KB each)
 - **Network**: Internet connection for web scraping and AI APIs
-- **API Keys**: Gemini (free tier) or OpenAI (paid) account
-
-## Next Steps
+- **API Keys**: OpenAI account required
 
 ### Potential Enhancements
-- **Authentication**: User sessions and access control
 - **Database**: PostgreSQL/MongoDB for factsheet storage
-- **Caching**: Redis for improved performance
 - **Templates**: Industry-specific factsheet formats
-- **Integrations**: CRM export (Salesforce, HubSpot)
-- **Analytics**: Advanced reporting and insights
+- **Additional AI Providers**: Support for other LLM providers
+- **Selenium Integration**: Use Selenium to load complete pages and parse with BeautifulSoup for dynamic content that loads after scrolling
+- **News Article Parser**: Try newspaper3k instead of BeautifulSoup to check if it performs better for content extraction
+- **Intelligent Model Selection**: Automatically pick the optimal model based on content complexity to improve cost efficiency
+- **Hallucination Detection**: Add validation checks to ensure generated factsheets are grounded in scraped data without LLM hallucinations
 - **Deployment**: Docker containers and cloud hosting
 
 ---
