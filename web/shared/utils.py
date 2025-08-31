@@ -12,9 +12,9 @@ class APIClient:
         self.base_url = base_url.rstrip('/')
         self.session = requests.Session()
     
-    def generate_factsheet(self, url: str, provider: str = "gemini", model: Optional[str] = None) -> Dict[str, Any]:
+    def generate_factsheet(self, url: str, model: Optional[str] = None) -> Dict[str, Any]:
         """Start factsheet generation"""
-        data = {"url": url, "provider": provider}
+        data = {"url": url}
         if model:
             data["model"] = model
         

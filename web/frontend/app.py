@@ -11,10 +11,11 @@ from datetime import datetime
 import plotly.express as px
 import sys
 import os
+from src.logger import logger
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../shared"))
 from utils import APIClient, wait_for_task_completion, format_file_size, validate_url, normalize_url, get_company_name_from_url
-from model_utils import get_available_models
+from model_utils import get_openai_models
 
 # Page config
 st.set_page_config(
@@ -71,7 +72,7 @@ st.markdown("""
 def check_api_health():
     """Check if API is running"""
     if not api_client.health_check():
-        st.error("**Backend API is not running!**")
+        logger.error("**Backend API is not running!**")
         st.markdown("""
         Please start the FastAPI backend:
         ```bash
@@ -181,142 +182,193 @@ def show_dashboard():
                                 st.success("Factsheet deleted!")
                                 st.rerun()
                             except Exception as e:
-                                st.error(f"Error deleting factsheet: {e}")
+                                logger.error(f"Error deleting factsheet: {e}")
                     
                     st.divider()
         else:
-            st.info("No factsheets generated yet. Use the Generator to create your first one!")
+            logger.info("No factsheets generated yet. Use the Generator to create your first one!")
     
     except Exception as e:
-        st.error(f"Error loading dashboard: {e}")
+        logger.error(f"Error loading dashboard: {e}")
 
 def show_generator():
-    """Show the factsheet generator"""
     st.markdown('<h1 class="main-header">Generate New Factsheet</h1>', unsafe_allow_html=True)
+    logger.info("show_generator() called")
     
     if not check_api_health():
+        logger.error("API health check failed")
         return
+    logger.info("API health check passed")
     
-    with st.form("generate_form"):
+    st.markdown("""
+    <style>
+    .generator-section {
+        background: #f8f9fa;
+        padding: 2rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+        border: 1px solid #e9ecef;
+    }
+    .form-row {
+        margin-bottom: 1.5rem;
+    }
+    .generate-btn {
+        background: linear-gradient(45deg, #007bff, #0056b3);
+        color: white;
+        padding: 0.75rem 2rem;
+        border: none;
+        border-radius: 5px;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 1rem;
+    }
+    .progress-section {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin: 1rem 0;
+        border-left: 4px solid #007bff;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    if 'models_cache' not in st.session_state:
+        st.session_state.models_cache = {}
+        logger.info("Initialized models_cache")
+    if 'current_provider' not in st.session_state:
+        st.session_state.current_provider = None
+        logger.info("Initialized current_provider")
+        
+    # Only OpenAI provider supported
+    provider = "openai"
+    
+    with st.form("factsheet_generator"):
         st.subheader("Company Information")
         
-        col1, col2 = st.columns([3, 1])
+        url = st.text_input(
+            "Company Website URL",
+            placeholder="Enter domain (e.g., stripe.com, openai.com)",
+            help="Enter the company's main website domain"
+        )
         
-        with col1:
-            url = st.text_input(
-                "Company Website URL",
-                placeholder="example.com or stripe.com",
-                help="Enter company domain (https:// and www. will be added automatically)"
-            )
+        st.subheader("Model Configuration")
         
-        with col2:
-            st.markdown("**AI Provider**")
-            provider = st.selectbox(
-                "Provider",
-                ["openai", "gemini"],
-                help="OpenAI requires API key, Gemini is free"
-            )
+        logger.info(f"Current provider in session: {st.session_state.current_provider}")
+        logger.info(f"Using provider: {provider}")
         
-        # Model selection based on provider
-        st.subheader("Model Selection")
+        if st.session_state.current_provider != provider:
+            logger.info(f"Provider changed from {st.session_state.current_provider} to {provider}")
+            st.session_state.current_provider = provider
+        else:
+            logger.info("Provider unchanged")
         
-        # Get available models dynamically
-        with st.spinner("Loading available models..."):
-            try:
-                all_models = get_available_models()
-                available_models = all_models.get(provider, {})
-            except Exception as e:
-                st.error(f"Error loading models: {str(e)}")
-                available_models = {}
+        logger.info(f"Checking if {provider} in models_cache: {provider in st.session_state.models_cache}")
         
-        # Prepare model selection
-        model_names = list(available_models.keys())
-        model_labels = [available_models[name] for name in model_names]
+        if provider not in st.session_state.models_cache:
+            logger.info(f"Loading models for {provider}...")
+            with st.spinner(f"Loading OpenAI models..."):
+                try:
+                    logger.info("Calling get_openai_models()")
+                    models_dict = get_openai_models()
+                    logger.info(f"get_openai_models() returned {len(models_dict)} models")
+                    
+                    logger.info(f"Caching models for {provider}: {list(models_dict.keys())[:3] if models_dict else 'Empty'}")
+                    st.session_state.models_cache[provider] = models_dict
+                except Exception as e:
+                    logger.error(f"Exception in model loading: {str(e)}")
+                    logger.error(f"Error loading OpenAI models: {str(e)}")
+                    models_dict = {}
+                    st.session_state.models_cache[provider] = {}
+        else:
+            logger.info(f"Using cached models for {provider}")
+            models_dict = st.session_state.models_cache[provider]
+            logger.info(f"Cached models count: {len(models_dict)}")
         
-        if model_names:
+        if models_dict:
+            logger.info(f"Processing {len(models_dict)} models")
+            model_options = list(models_dict.values())
+            model_ids = list(models_dict.keys())
+            
             selected_model_label = st.selectbox(
                 "Model",
-                model_labels,
-                help=f"Choose a {provider.upper()} model for factsheet generation"
+                model_options,
+                help=f"Select a {provider.upper()} model for factsheet generation"
             )
-            # Get the actual model name from the selected label
-            model = model_names[model_labels.index(selected_model_label)]
+            
+            logger.info(f"Selected model label: {selected_model_label}")
+            selected_model = model_ids[model_options.index(selected_model_label)]
+            logger.info(f"Selected model ID: {selected_model}")
         else:
-            model = None
-            st.warning(f"No models available for {provider}. Please check your API key.")
-            if provider == "openai" and not os.getenv("OPENAI_API_KEY"):
+            logger.error("No OpenAI models available")
+            st.warning("No OpenAI models available")
+            if not os.getenv("OPENAI_API_KEY"):
+                logger.error("OpenAI API key not found")
                 st.info("Set your OpenAI API key: `export OPENAI_API_KEY='your-key'`")
-            elif provider == "gemini" and not os.getenv("GEMINI_API_KEY"):
-                st.info("Set your Gemini API key: `export GEMINI_API_KEY='your-key'`")
+            selected_model = None
         
-        submitted = st.form_submit_button("Generate Factsheet", type="primary")
+        submitted = st.form_submit_button(
+            "Generate Factsheet",
+            type="primary",
+            use_container_width=True
+        )
         
         if submitted:
             if not url:
-                st.error("Please enter a company URL")
-                return
-            
-            # Normalize the URL
-            normalized_url = normalize_url(url)
-            
-            if not validate_url(url):
-                st.error("Please enter a valid company domain")
-                return
-            
-            try:
-                # Start generation with normalized URL
-                with st.spinner("Starting factsheet generation..."):
-                    response = api_client.generate_factsheet(
-                        url=normalized_url,
-                        provider=provider,
-                        model=model if model else None
-                    )
-                
-                task_id = response['task_id']
-                st.success(f"Generation started! Task ID: {task_id}")
-                
-                # Progress tracking
-                st.subheader("Generation Progress")
-                
-                progress_bar = st.progress(0)
-                status_text = st.empty()
-                
-                try:
-                    result = wait_for_task_completion(api_client, task_id, progress_bar, status_text)
-                    
-                    st.success("Factsheet generated successfully!")
-                    
-                    # Store completion info in session state
-                    st.session_state.generation_completed = True
-                    st.session_state.completed_filename = result['result']['filename']
-                    
-                    # Show result details
-                    st.subheader("Generation Complete")
-                    
-                    col1, col2, col3 = st.columns(3)
-                    
-                    with col1:
-                        st.metric("Company", result['result']['company_name'])
-                    
-                    with col2:
-                        st.metric("Word Count", result['result']['word_count'])
-                    
-                    with col3:
-                        st.metric("Status", "Complete")
-                
-                except Exception as e:
-                    st.error(f"Generation failed: {e}")
-            
-            except Exception as e:
-                st.error(f"Error starting generation: {e}")
+                logger.error("Please enter a company URL")
+            elif not selected_model:
+                logger.error("Please select a model")
+            else:
+                normalized_url = normalize_url(url)
+                if not validate_url(url):
+                    logger.error("Please enter a valid company domain")
+                else:
+                    try:
+                        with st.spinner("Starting factsheet generation..."):
+                            response = api_client.generate_factsheet(
+                                url=normalized_url,
+                                model=selected_model
+                            )
+                        
+                        task_id = response['task_id']
+                        st.success(f"Generation started! Task ID: {task_id}")
+                        
+                        with st.container():
+                            st.subheader("Generation Progress")
+                            progress_bar = st.progress(0)
+                            status_text = st.empty()
+                        
+                        try:
+                            result = wait_for_task_completion(api_client, task_id, progress_bar, status_text)
+                            
+                            st.success("Factsheet generated successfully!")
+                            
+                            st.session_state.generation_completed = True
+                            st.session_state.completed_filename = result['result']['filename']
+                            
+                            col1, col2, col3 = st.columns(3)
+                            with col1:
+                                st.metric("Company", result['result']['company_name'])
+                            with col2:
+                                st.metric("Word Count", result['result']['word_count'])
+                            with col3:
+                                st.metric("Status", "Complete")
+                                
+                        except Exception as e:
+                            logger.error(f"Generation failed: {e}")
+                    except Exception as e:
+                        logger.error(f"Error starting generation: {e}")
     
-    # Check if we just completed generation and show view button outside form
-    if 'generation_completed' in st.session_state and st.session_state.generation_completed:
-        st.subheader("Next Steps")
-        if st.button("View Generated Factsheet", type="secondary"):
+    if st.session_state.get('generation_completed', False):
+        st.markdown("---")
+        if st.button(
+            "View Generated Factsheet",
+            type="secondary",
+            use_container_width=True
+        ):
             st.session_state.selected_factsheet = st.session_state.completed_filename
             st.session_state.page = "viewer"
-            st.session_state.generation_completed = False  # Reset flag
+            st.session_state.generation_completed = False
             st.rerun()
 
 def show_viewer():
@@ -330,6 +382,7 @@ def show_viewer():
     selected_filename = st.session_state.get('selected_factsheet')
     
     if not selected_filename:
+        logger.info("No factsheet selected. Go to Dashboard to select one.")
         st.info("No factsheet selected. Go to Dashboard to select one.")
         return
     
@@ -374,7 +427,7 @@ def show_viewer():
             st.markdown(display_content)
         
     except Exception as e:
-        st.error(f"Error loading factsheet: {e}")
+        logger.error(f"Error loading factsheet: {e}")
 
 def main():
     """Main application"""
