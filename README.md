@@ -268,16 +268,14 @@ python src/main.py --url https://example.com --verbose
 - **Network**: Internet connection for web scraping and AI APIs
 - **API Keys**: OpenAI account required
 
-## Next Steps
-
 ### Potential Enhancements
-- **Authentication**: User sessions and access control
 - **Database**: PostgreSQL/MongoDB for factsheet storage
-- **Caching**: Redis for improved performance
 - **Templates**: Industry-specific factsheet formats
-- **Integrations**: CRM export (Salesforce, HubSpot)
-- **Analytics**: Advanced reporting and insights
 - **Additional AI Providers**: Support for other LLM providers
+- **Selenium Integration**: Use Selenium to load complete pages and parse with BeautifulSoup for dynamic content that loads after scrolling
+- **News Article Parser**: Try newspaper3k instead of BeautifulSoup to check if it performs better for content extraction
+- **Intelligent Model Selection**: Automatically pick the optimal model based on content complexity to improve cost efficiency
+- **Hallucination Detection**: Add validation checks to ensure generated factsheets are grounded in scraped data without LLM hallucinations
 - **Deployment**: Docker containers and cloud hosting
 
 ---
