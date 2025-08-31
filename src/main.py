@@ -102,9 +102,9 @@ Examples:
     parser.add_argument('--select', type=int, help='Select specific company index from CSV (0-based)')
     parser.add_argument('--output-dir', type=str, default='factsheets', 
                        help='Output directory for factsheet files')
-    parser.add_argument('--provider', type=str, default='gemini', 
+    parser.add_argument('--provider', type=str, default='openai', 
                        choices=['openai', 'gemini'],
-                       help='AI provider to use (default: gemini - free tier available)')
+                       help='AI provider to use (default: openai - recommended for quality)')
     parser.add_argument('--model', type=str, help='AI model to use (provider-specific)')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
     

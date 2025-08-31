@@ -15,12 +15,12 @@ from logger import logger
 load_dotenv()
 
 class FactsheetSynthesizer:
-    def __init__(self, provider="gemini", model=None):
+    def __init__(self, provider="openai", model=None):
         self.provider = provider.lower()
         
         if self.provider == "openai":
             self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-            self.model = model or "gpt-3.5-turbo"
+            self.model = model or "gpt-4o-mini"
             if not os.getenv("OPENAI_API_KEY"):
                 raise ValueError("OPENAI_API_KEY environment variable not set")
                 
@@ -178,7 +178,7 @@ Only use fallback phrases when information is genuinely not extractable from con
         
         return '\n'.join(cleaned_lines)
 
-def create_factsheet(company_data, provider="gemini", model=None):
+def create_factsheet(company_data, provider="openai", model=None):
     """Main function to create factsheet from company data"""
     synthesizer = FactsheetSynthesizer(provider=provider, model=model)
     return synthesizer.generate_factsheet(company_data)
